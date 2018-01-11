@@ -16,6 +16,8 @@ import (
 
 	"encoding/json"
 
+	"sync"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
 )
@@ -29,10 +31,17 @@ const Cookie = "session-id=133-8500956-2009409; " +
 	" a-ogbcbff=1; " +
 	"session-token=\"cZSlPMRt8u360s/ufDXaODK8+015vU0hYdlcvdE7Q95nAyjN8k+/2+GOwXFaQstzBtvCMEQAqoLREuME6kihWyFmD0WkzCL7UtAx81U4A3xAstdQtNC8HPa1/jSqtd14RY+eSpu695Lv2VHugVAo+n8qJBlOHAnhqDzSsIJxAyUtFmgGFssmVm7kByuuwil2tIr06Dq0CTFGh2MmBUf1eQ6oIhrVFFmKeFeEP09WlWK8HJzazZj5Kbm57t3l1pxiw6+Jhj5KM9tVsGXscLHY/A==\"; x-main=\"ezZ0qDyjzxneRSCR0IKIci1dA?DOIGkpwjYi0?TFgTbo5Dg72O8@dTNP4IZ@n4my\"; at-main=Atza|IwEBIHT7pByiU9me1KMaFTiD0r4OLIbVik0guwYh3mnGxvLelj2UjJDB-thUzAad5hI62iEKmxSGCWc0taQolNVTfzkhb2bxwHd3L6ldO4Acr2wVZ5cF4IyfOrWeiSVN0-rTo7eldGJR3ufwoFp5mspeKzxOFruM1JZx9x68aRnt3HTk6zpERVQHMpiQnktffDPjs3Yb2sFc0V-lwX1BtSbcZ2uWepwuOl7skiwIlCcIPVjaVVoq_6a6_mgvW2YE2BcZ65mUVPWk9QM3fyQcH17h-fTv-BTBonY_avjCCVbWZaVMMl2hmV4uklrdsog5r7zr8O0QVN1cKqVILo26E8WL0eLkWI6fCLatUn3t86XazjpRZux_mqlWHpAEhBP0cHyX9_CywtbqEt5rQjqIQQxSrn-v; sess-at-main=\"GP+xmj/5F+DSiAzermlfqyR5CwvOl2Zrfn7Iwd8uAtc=\"; sst-main=Sst1|PQHODdLpmKLUPsmWTUs5mpH4CFY1XAjRFaDM8Zly3R6fGRG1PXN-RR-BragU1OorONv41QnmEHIgx3WFk9QoEvyf2564ywr4WADsTp50fWbvQEOAQEnPK8JAX5EeIObF3lQCmJSX-1WK30c1Nj7KYwsrwSpubcvEKl6zw2mRke_DWGaNsJW1ImwLQh79V0V_JuK8B8hQx7SlM8d1EY9r1773HqQlurzRE2ZoHYv3RZ33QJVW8ycvqp9zZNzuDN6AFg1rC68jo08dst4_tGZ5CX57fg; lc-main=en_US; x-wl-uid=1bjXOXOzkydlFDdbs+hsDH18XuaxumxxDhvrejiwa7fbc9AC0HCkALwwstLnbInpMjOZwkf6ojugkuvXHP0yKP25KmErlFwTxwEpUXrOsvdu0o6MhOxn+sIEs56r6sucX5GY7CD2/y7w=; csm-hit=s-KYRJW9N1Y95HRP7BHNJ5|1515403111471"
 
+type Country int
+
 const (
-	JAPAN = "https://www.amazon.co.jp"
-	US    = "https://www.amazon.com"
+	JAPAN Country = iota
+	US
 )
+
+var countryURL = map[Country]string{
+	JAPAN: "https://www.amazon.co.jp",
+	US:    "https://www.amazon.com",
+}
 
 var (
 	EmailNotFound  = errors.New("email not found")
@@ -40,31 +49,42 @@ var (
 	LastReviewPage = errors.New("last review paeg")
 )
 
-func CrawlerTopReviewUser(url string) {
+var baseUrl string
+
+func CrawlerTopReviewUser(c Country) {
+
+	baseUrl = countryURL[c]
+
 	o := orm.NewOrm()
 	for index := 1; index < 1000; index++ {
-		err, q := getDocument(url, index)
+		err, q := getDocument(baseUrl, index)
 		if err != nil {
 			util.Logger.Error(err.Error())
 			continue
 		}
+		p := util.New(30)
+		var wg sync.WaitGroup
 
 		for _, user := range getUsers(q) {
-			if _, _, err := o.ReadOrCreate(&user, "profile_id"); err == nil {
-				configUser(&user)
-				if _, err := o.Update(&user); err != nil {
-					if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
-						getReviewProduct(user)
+			wg.Add(1)
+			go func(u models.User) {
+				p.Run(func() {
+					if _, _, err := o.ReadOrCreate(&u, "profile_id"); err == nil {
+						configUser(&u)
+						if _, err := o.Update(&u); err != nil {
+							util.Logger.Error(err.Error())
+						}
 					} else {
 						util.Logger.Error(err.Error())
 					}
-				} else {
-					getReviewProduct(user)
-				}
-			} else {
-				util.Logger.Error(err.Error())
-			}
+					wg.Done()
+				})
+
+			}(user)
+
 		}
+		wg.Wait()
+		p.Shutdown()
 	}
 }
 
@@ -76,7 +96,7 @@ func getUsers(q *goquery.Document) []models.User {
 	q.Find(".a-text-center").Find("a").Each(func(i int, selection *goquery.Selection) {
 		if profileUrl, exit := selection.Attr("href"); exit {
 			if strings.Contains(profileUrl, "account") {
-				user.ProfileUrl = "https://www.amazon.com" + util.Substr(profileUrl, 0, strings.Index(profileUrl, "/ref"))
+				user.ProfileUrl = baseUrl + util.Substr(profileUrl, 0, strings.Index(profileUrl, "/ref"))
 			}
 		}
 		if name, exit := selection.Attr("name"); exit {

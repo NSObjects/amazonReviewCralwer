@@ -10,9 +10,36 @@ import (
 
 	"amazonReviewCralwer/util"
 
+	"sync"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
 )
+
+func CrawlerProduct() {
+
+	var users []models.User
+	o := orm.NewOrm()
+
+	_, err := o.QueryTable("user").Limit(10000).All(&users)
+	if err != nil {
+		util.Logger.Error(err.Error())
+		return
+	}
+	p := util.New(30)
+	var wg sync.WaitGroup
+	for _, u := range users {
+		wg.Add(1)
+		go func(user models.User) {
+			p.Run(func() {
+				getReviewProduct(user)
+				wg.Done()
+			})
+		}(u)
+		wg.Wait()
+		p.Shutdown()
+	}
+}
 
 func getReviewProduct(user models.User) {
 
@@ -45,7 +72,7 @@ func inserProduct(reviewList []string, userId int64) {
 	o := orm.NewOrm()
 	for _, reviewUrl := range reviewList {
 		if productLink, err := getProductLint(reviewUrl); err == nil {
-			link := "https://www.amazon.com" + productLink
+			link := baseUrl + productLink
 			product := models.Product{
 				UserId: userId,
 				Url:    link,
@@ -131,7 +158,7 @@ func getProductCategory(url string) (categoryList []string, err error) {
 func getReviewListToken(profileId string) (token string, reviewList []string, err error) {
 
 	client := &http.Client{}
-	url := fmt.Sprintf("https://www.amazon.com/glimpse/timeline/%s?isWidgetOnly=true", profileId)
+	url := fmt.Sprintf(baseUrl+"/glimpse/timeline/%s?isWidgetOnly=true", profileId)
 	// Create request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -141,7 +168,7 @@ func getReviewListToken(profileId string) (token string, reviewList []string, er
 	// Headers
 	req.Header.Add("X-Requested-With", "XMLHttpRequest")
 	req.Header.Add("Accept", "text/html, */*; q=0.01")
-	req.Header.Add("Referer", fmt.Sprintf("https://www.amazon.com/gp/profile/amzn1.account.%s", profileId))
+	req.Header.Add("Referer", fmt.Sprintf(baseUrl+"/gp/profile/amzn1.account.%s", profileId))
 	req.Header.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7")
 	req.Header.Add("Cookie", Cookie)
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
@@ -182,7 +209,7 @@ func getReviewListToken(profileId string) (token string, reviewList []string, er
 func getReviewList(token string) (nextToken string, reviewList []string, err error) {
 
 	client := &http.Client{}
-	url := fmt.Sprintf("https://www.amazon.com/glimpse/stories/next/ref=glimp_time_pag?token=%s&context=GlimpseTimeline&id&preview=false&dogfood=false", token)
+	url := fmt.Sprintf(baseUrl+"/glimpse/stories/next/ref=glimp_time_pag?token=%s&context=GlimpseTimeline&id&preview=false&dogfood=false", token)
 
 	req, err := http.NewRequest("GET", url, nil)
 

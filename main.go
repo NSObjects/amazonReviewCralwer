@@ -14,8 +14,11 @@ import (
 	"golang.org/x/net/html"
 )
 
+//#select category_id,COUNT(*) from product where user_id="2" and category_id > 0 GROUP BY category_id ORDER BY  COUNT(*) desc;
+//#select * from product where user_id="9" and category_id = 476
 func main() {
 	crawler.CrawlerTopReviewUser(crawler.US)
+	crawler.CrawlerProduct()
 }
 
 func loadDoc() *goquery.Document {
