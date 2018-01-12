@@ -272,7 +272,10 @@ func subStr(str, subStr string) string {
 	index := strings.Index(str, subStr)
 	if index > 0 {
 		tempStr := util.Substr(str, index-2, index+len(subStr)+100)
-		return util.Substr(tempStr, 0, strings.Index(tempStr, "\""))
+		if strings.Index(tempStr, "\"") > 0 {
+			return util.Substr(tempStr, 0, strings.Index(tempStr, "\""))
+		}
 	}
+
 	return ""
 }
