@@ -36,9 +36,10 @@ func CrawlerProduct() {
 				wg.Done()
 			})
 		}(u)
-		wg.Wait()
-		p.Shutdown()
 	}
+
+	wg.Wait()
+	p.Shutdown()
 }
 
 func getReviewProduct(user models.User) {

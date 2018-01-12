@@ -64,7 +64,7 @@ func CrawlerTopReviewUser(c Country) {
 		}
 		p := util.New(30)
 		var wg sync.WaitGroup
-
+		o.Delete()
 		for _, user := range getUsers(q) {
 			wg.Add(1)
 			go func(u models.User) {
