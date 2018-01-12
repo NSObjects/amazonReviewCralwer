@@ -14,10 +14,12 @@ import (
 	"golang.org/x/net/html"
 )
 
+//select user.id,count(*) from user,product where user.id=product.user_id Group by user.id order by count(*) Desc;
+//#select count(*) from product where user_id=3
 //#select category_id,COUNT(*) from product where user_id="2" and category_id > 0 GROUP BY category_id ORDER BY  COUNT(*) desc;
 //#select * from product where user_id="9" and category_id = 476
 func main() {
-	//crawler.CrawlerTopReviewUser(crawler.US)
+	crawler.CrawlerTopReviewUser(crawler.US)
 	crawler.CrawlerProduct(crawler.US)
 }
 
@@ -45,7 +47,7 @@ func init() {
 		fmt.Println(err)
 	}
 	time.Local = local
-	err = orm.RegisterDataBase("default", "mysql", "root:123456@tcp(127.0.0.1:3306)/amazon?charset=utf8&parseTime=true&loc=Asia%2FShanghai", 30, 30)
+	err = orm.RegisterDataBase("default", "mysql", "root:123456@tcp(127.0.0.1:3306)/amazon?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai", 30, 30)
 	if err != nil {
 		fmt.Println(err)
 	}

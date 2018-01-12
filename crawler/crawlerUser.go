@@ -70,6 +70,7 @@ func CrawlerTopReviewUser(c Country) {
 			go func(u models.User) {
 				p.Run(func() {
 					if _, _, err := o.ReadOrCreate(&u, "profile_id"); err == nil {
+						u.Country = int(c)
 						configUser(&u)
 						if _, err := o.Update(&u); err != nil {
 							util.Logger.Error(err.Error())
@@ -125,6 +126,7 @@ func configUser(user *models.User) {
 		util.Logger.Error(err.Error())
 	} else {
 		user.Twitter = subStr(*s, "https://twitter.com/")
+		user.Name = subStr(*s, "nameHeaderData")
 		user.Facebook = subStr(*s, "https://www.facebook.com/")
 		user.Instagram = subStr(*s, "https://www.instagram.com/")
 		user.Youtube = subStr(*s, "https://www.youtube.com/")
@@ -269,11 +271,21 @@ func getProfileHtml(profileUrl string) (err error, htmlstr *string) {
 }
 
 func subStr(str, subStr string) string {
-	index := strings.Index(str, subStr)
-	if index > 0 {
-		tempStr := util.Substr(str, index-2, index+len(subStr)+100)
-		if strings.Index(tempStr, "\"") > 0 {
-			return util.Substr(tempStr, 0, strings.Index(tempStr, "\""))
+	if subStr == "nameHeaderData" {
+		index := strings.Index(str, subStr)
+		if index > 0 {
+			tempStr := util.Substr(str, index+23, index+len(subStr)+100)
+			if strings.Index(tempStr, "\"") > 0 {
+				return util.Substr(tempStr, 0, strings.Index(tempStr, "\""))
+			}
+		}
+	} else {
+		index := strings.Index(str, subStr)
+		if index > 0 {
+			tempStr := util.Substr(str, index-2, index+len(subStr)+100)
+			if strings.Index(tempStr, "\"") > 0 {
+				return util.Substr(tempStr, 0, strings.Index(tempStr, "\""))
+			}
 		}
 	}
 

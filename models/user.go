@@ -17,6 +17,7 @@ type User struct {
 	ProfileUrl string
 	ProfileId  string
 	Name       string
+	Country    int
 	Created    time.Time `orm:"auto_now_add;type(datetime)"`
 	Updated    time.Time `orm:"auto_now;type(datetime)"`
 }
