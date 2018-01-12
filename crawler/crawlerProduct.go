@@ -16,8 +16,8 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-func CrawlerProduct() {
-
+func CrawlerProduct(c Country) {
+	baseUrl = countryURL[c]
 	var users []models.User
 	o := orm.NewOrm()
 
