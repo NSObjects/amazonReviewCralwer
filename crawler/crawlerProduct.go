@@ -21,7 +21,7 @@ func CrawlerProduct(c Country) {
 	var users []models.User
 	o := orm.NewOrm()
 
-	_, err := o.QueryTable("user").Limit(10000).All(&users)
+	_, err := o.QueryTable("user").OrderBy("id").Limit(10000).All(&users)
 	if err != nil {
 		util.Logger.Error(err.Error())
 		return
@@ -44,26 +44,24 @@ func CrawlerProduct(c Country) {
 
 func getReviewProduct(user models.User) {
 
-	token, reviewList, err := getReviewListToken(user.ProfileId)
-	if err != nil || token == "" {
+	if token, reviewList, err := getReviewListToken(user.ProfileId); err == nil {
+		inserProduct(reviewList, user.Id)
+		for {
+			if token, reviewList, err = getReviewList(token); err == nil {
+				inserProduct(reviewList, user.Id)
+			} else {
+				if err != LastReviewPage {
+					util.Logger.Error(err.Error())
+				}
+				break
+			}
+		}
+	} else {
 		if err != TokenNotFound {
 			util.Logger.Error(err.Error())
 		}
-		return
 	}
 
-	inserProduct(reviewList, user.Id)
-
-	for {
-		token, reviewList, err = getReviewList(token)
-		if err != nil || len(reviewList) == 0 {
-			if err != LastReviewPage {
-				util.Logger.Error(err.Error())
-			}
-			break
-		}
-		inserProduct(reviewList, user.Id)
-	}
 }
 
 func inserProduct(reviewList []string, userId int64) {
@@ -192,7 +190,7 @@ func getReviewListToken(profileId string) (token string, reviewList []string, er
 	}
 
 	token, _ = q.Find(".glimpse-main-pagination-trigger").Attr("data-pagination-token")
-	if len(token) == 0 {
+	if token == "" {
 		return "", nil, TokenNotFound
 	}
 
