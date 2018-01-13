@@ -18,28 +18,43 @@ import (
 
 func CrawlerProduct(c Country) {
 	baseUrl = countryURL[c]
-	var users []models.User
+	var lastId int64
 	o := orm.NewOrm()
+	for {
+		var users []models.User
+		_, err := o.QueryTable("user").
+			Filter("id__gt", lastId).
+			OrderBy("id").
+			Limit(1000).
+			All(&users)
 
-	_, err := o.QueryTable("user").OrderBy("id").Limit(10000).All(&users)
-	if err != nil {
-		util.Logger.Error(err.Error())
-		return
-	}
-	p := util.New(30)
-	var wg sync.WaitGroup
-	for _, u := range users {
-		wg.Add(1)
-		go func(user models.User) {
-			p.Run(func() {
-				getReviewProduct(user)
-				wg.Done()
-			})
-		}(u)
+		if err != nil {
+			util.Logger.Error(err.Error())
+			return
+		}
+
+		if len(users) == 0 || lastId == users[len(users)-1].Id {
+			return
+		}
+
+		lastId = users[len(users)-1].Id
+
+		p := util.New(30)
+		var wg sync.WaitGroup
+		for _, u := range users {
+			wg.Add(1)
+			go func(user models.User) {
+				p.Run(func() {
+					getReviewProduct(user)
+					wg.Done()
+				})
+			}(u)
+		}
+
+		wg.Wait()
+		p.Shutdown()
 	}
 
-	wg.Wait()
-	p.Shutdown()
 }
 
 func getReviewProduct(user models.User) {
