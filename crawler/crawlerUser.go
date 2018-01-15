@@ -18,6 +18,8 @@ import (
 
 	"sync"
 
+	"strconv"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
 )
@@ -125,6 +127,12 @@ func configUser(user *models.User) {
 	if err, s := getProfileHtml(user.ProfileUrl); err != nil {
 		util.Logger.Error(err.Error())
 	} else {
+		if helpfulVotes, reviews, err := gethelpfulVotes(user.ProfileId); err == nil {
+			user.HelpfulVotes = helpfulVotes
+			user.Reviews = reviews
+		} else {
+			util.Logger.Error(err.Error())
+		}
 		user.Twitter = subStr(*s, "https://twitter.com/")
 		user.Name = subStr(*s, "nameHeaderData")
 		user.Facebook = subStr(*s, "https://www.facebook.com/")
@@ -290,4 +298,75 @@ func subStr(str, subStr string) string {
 	}
 
 	return ""
+}
+
+func gethelpfulVotes(userId string) (int, int, error) {
+
+	client := &http.Client{}
+	url := fmt.Sprintf("https://www.amazon.com/hz/gamification/api/contributor/dashboard/%s?ownerView=false&customerFollowEnabled=false", userId)
+	// Create request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return 0, 0, err
+	}
+	// Headers
+	req.Header.Add("Cookie", Cookie)
+
+	// Fetch Request
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// Read Response Body
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	var helpfulVotes struct {
+		HelpfulVotes struct {
+			HelpfulVotesData struct {
+				Count string `json:"count"`
+			} `json:"helpfulVotesData"`
+		} `json:"helpfulVotes"`
+		Reviews struct {
+			ReviewsCountData struct {
+				Count string `json:"count"`
+			} `json:"reviewsCountData"`
+		} `json:"reviews"`
+	}
+
+	err = json.Unmarshal(respBody, &helpfulVotes)
+	if err != nil {
+		return 0, 0, err
+	}
+	var count int
+	if strings.Contains(helpfulVotes.HelpfulVotes.HelpfulVotesData.Count, "k") {
+		s := strings.Replace(helpfulVotes.HelpfulVotes.HelpfulVotesData.Count, "k", "", -1)
+
+		c, err := strconv.ParseFloat(s, 64)
+		if err == nil {
+			count = int(c * 1000)
+		}
+	} else {
+		c, err := strconv.ParseFloat(helpfulVotes.HelpfulVotes.HelpfulVotesData.Count, 64)
+		if err == nil {
+			count = int(c)
+		}
+	}
+
+	var reviews int
+	if strings.Contains(helpfulVotes.Reviews.ReviewsCountData.Count, "k") {
+		s := strings.Replace(helpfulVotes.Reviews.ReviewsCountData.Count, "k", "", -1)
+
+		c, err := strconv.ParseFloat(s, 64)
+		if err == nil {
+			reviews = int(c * 1000)
+		}
+	} else {
+		c, err := strconv.ParseFloat(helpfulVotes.HelpfulVotes.HelpfulVotesData.Count, 64)
+		if err == nil {
+			reviews = int(c)
+		}
+	}
+
+	return count, reviews, nil
 }
