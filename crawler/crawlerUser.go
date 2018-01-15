@@ -119,28 +119,28 @@ func configUser(user *models.User) {
 
 	if email, err := getUserEmail(user.ProfileUrl); err == nil {
 		user.Email = email
+		if err, s := getProfileHtml(user.ProfileUrl); err != nil {
+			util.Logger.Error(err.Error())
+		} else {
+			if helpfulVotes, reviews, err := gethelpfulVotes(user.ProfileId); err == nil {
+				user.HelpfulVotes = helpfulVotes
+				user.Reviews = reviews
+			} else {
+				util.Logger.Error(err.Error())
+			}
+			user.Twitter = subStr(*s, "https://twitter.com/")
+			user.Name = subStr(*s, "nameHeaderData")
+			user.Facebook = subStr(*s, "https://www.facebook.com/")
+			user.Instagram = subStr(*s, "https://www.instagram.com/")
+			user.Youtube = subStr(*s, "https://www.youtube.com/")
+			user.Pinterest = subStr(*s, "https://www.pinterest.com/")
+		}
 	} else {
 		if err != EmailNotFound {
 			util.Logger.Error(err.Error())
 		}
 	}
 
-	if err, s := getProfileHtml(user.ProfileUrl); err != nil {
-		util.Logger.Error(err.Error())
-	} else {
-		if helpfulVotes, reviews, err := gethelpfulVotes(user.ProfileId); err == nil {
-			user.HelpfulVotes = helpfulVotes
-			user.Reviews = reviews
-		} else {
-			util.Logger.Error(err.Error())
-		}
-		user.Twitter = subStr(*s, "https://twitter.com/")
-		user.Name = subStr(*s, "nameHeaderData")
-		user.Facebook = subStr(*s, "https://www.facebook.com/")
-		user.Instagram = subStr(*s, "https://www.instagram.com/")
-		user.Youtube = subStr(*s, "https://www.youtube.com/")
-		user.Pinterest = subStr(*s, "https://www.pinterest.com/")
-	}
 }
 
 func getDocument(url string, page int) (err error, g *goquery.Document) {
