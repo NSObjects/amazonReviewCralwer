@@ -74,6 +74,7 @@ func CrawlerTopReviewUser(c Country) {
 					if _, _, err := o.ReadOrCreate(&u, "profile_id"); err == nil {
 						u.Country = int(c)
 						configUser(&u)
+
 						if _, err := o.Update(&u); err != nil {
 							util.Logger.Error(err.Error())
 						}
