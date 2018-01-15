@@ -69,18 +69,26 @@ func CrawlerTopReviewUser(c Country) {
 
 		for _, user := range getUsers(q) {
 			wg.Add(1)
+
 			go func(u models.User) {
 				p.Run(func() {
-					if _, _, err := o.ReadOrCreate(&u, "profile_id"); err == nil {
-						u.Country = int(c)
-						configUser(&u)
-
-						if _, err := o.Update(&u); err != nil {
+					if email, err := getUserEmail(u.ProfileUrl); err == nil {
+						u.Email = email
+						if _, _, err := o.ReadOrCreate(&u, "profile_id"); err == nil {
+							u.Country = int(c)
+							configUser(&u)
+							if _, err := o.Update(&u); err != nil {
+								util.Logger.Error(err.Error())
+							}
+						} else {
 							util.Logger.Error(err.Error())
 						}
 					} else {
-						util.Logger.Error(err.Error())
+						if err != EmailNotFound {
+							util.Logger.Error(err.Error())
+						}
 					}
+
 					wg.Done()
 				})
 
@@ -116,29 +124,21 @@ func getUsers(q *goquery.Document) []models.User {
 }
 
 func configUser(user *models.User) {
-
-	if email, err := getUserEmail(user.ProfileUrl); err == nil {
-		user.Email = email
-		if err, s := getProfileHtml(user.ProfileUrl); err != nil {
-			util.Logger.Error(err.Error())
-		} else {
-			if helpfulVotes, reviews, err := gethelpfulVotes(user.ProfileId); err == nil {
-				user.HelpfulVotes = helpfulVotes
-				user.Reviews = reviews
-			} else {
-				util.Logger.Error(err.Error())
-			}
-			user.Twitter = subStr(*s, "https://twitter.com/")
-			user.Name = subStr(*s, "nameHeaderData")
-			user.Facebook = subStr(*s, "https://www.facebook.com/")
-			user.Instagram = subStr(*s, "https://www.instagram.com/")
-			user.Youtube = subStr(*s, "https://www.youtube.com/")
-			user.Pinterest = subStr(*s, "https://www.pinterest.com/")
-		}
+	if err, s := getProfileHtml(user.ProfileUrl); err != nil {
+		util.Logger.Error(err.Error())
 	} else {
-		if err != EmailNotFound {
+		if helpfulVotes, reviews, err := gethelpfulVotes(user.ProfileId); err == nil {
+			user.HelpfulVotes = helpfulVotes
+			user.Reviews = reviews
+		} else {
 			util.Logger.Error(err.Error())
 		}
+		user.Twitter = subStr(*s, "https://twitter.com/")
+		user.Name = subStr(*s, "nameHeaderData")
+		user.Facebook = subStr(*s, "https://www.facebook.com/")
+		user.Instagram = subStr(*s, "https://www.instagram.com/")
+		user.Youtube = subStr(*s, "https://www.youtube.com/")
+		user.Pinterest = subStr(*s, "https://www.pinterest.com/")
 	}
 
 }
