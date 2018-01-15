@@ -348,10 +348,9 @@ func gethelpfulVotes(userId string) (int, int, error) {
 			count = int(c * 1000)
 		}
 	} else {
-		c, err := strconv.ParseFloat(helpfulVotes.HelpfulVotes.HelpfulVotesData.Count, 64)
-		if err == nil {
-			count = int(c)
-		}
+
+		c, _ := strconv.Atoi(helpfulVotes.HelpfulVotes.HelpfulVotesData.Count)
+		count = c
 	}
 
 	var reviews int
@@ -363,10 +362,9 @@ func gethelpfulVotes(userId string) (int, int, error) {
 			reviews = int(c * 1000)
 		}
 	} else {
-		c, err := strconv.ParseFloat(helpfulVotes.HelpfulVotes.HelpfulVotesData.Count, 64)
-		if err == nil {
-			reviews = int(c)
-		}
+
+		c, _ := strconv.Atoi(helpfulVotes.HelpfulVotes.HelpfulVotesData.Count)
+		reviews = c
 	}
 
 	return count, reviews, nil
