@@ -91,33 +91,43 @@ func inserProduct(reviewList []string, userId int64) {
 				UserId: userId,
 				Url:    link,
 			}
-
 			if _, _, err := o.ReadOrCreate(&product, "user_id", "url"); err == nil {
-				if categoryList, err := getProductCategory(link); err == nil {
-					var categoryId int64 = 0
-					for _, c := range categoryList {
-						category := models.Category{
-							Name: c,
-						}
-						if created, id, err := o.ReadOrCreate(&category, "name"); err == nil {
-							if created {
-								category.ParentId = categoryId
-								if _, err := o.Update(&category, "parent_id"); err != nil {
-									util.Logger.Error(err.Error())
-								}
+				if doc, err := getProductDoc(link); err == nil {
+					if categoryList, err := getProductCategory(doc); err == nil {
+						var categoryId int64 = 0
+						for _, c := range categoryList {
+							category := models.Category{
+								Name: c,
 							}
-							categoryId = id
-						} else {
-							util.Logger.Error(err.Error())
+							if created, id, err := o.ReadOrCreate(&category, "name"); err == nil {
+								if created {
+									category.ParentId = categoryId
+									if _, err := o.Update(&category, "parent_id"); err != nil {
+										util.Logger.Error(err.Error())
+									}
+								}
+								categoryId = id
+							} else {
+								util.Logger.Error(err.Error())
+							}
 						}
+						product.CategoryId = categoryId
+					} else {
+						util.Logger.Error(err.Error())
 					}
-					product.CategoryId = categoryId
-				} else {
-					util.Logger.Error(err.Error())
+					if name, exists := doc.Find("#imgTagWrapperId").Children().Attr("alt"); exists {
+						product.Name = name
+					} else if name = doc.Find("#ebooksProductTitle").Text(); name != "" {
+						product.Name = name
+					} else if name = doc.Find("#productTitle").Text(); name != "" {
+						product.Name = name
+					}
+					if _, err := o.Update(&product, "category_id", "name"); err != nil {
+						util.Logger.Error(err.Error())
+					}
+
 				}
-				if _, err := o.Update(&product, "category_id"); err != nil {
-					util.Logger.Error(err.Error())
-				}
+
 			} else {
 				util.Logger.Error(err.Error())
 			}
@@ -128,8 +138,25 @@ func inserProduct(reviewList []string, userId int64) {
 	}
 }
 
-func getProductCategory(url string) (categoryList []string, err error) {
+func getProductCategory(q *goquery.Document) (categoryList []string, err error) {
 
+	q.Find(".a-link-normal.a-color-tertiary").Each(func(i int, selection *goquery.Selection) {
+		s := strings.Map(func(r rune) rune {
+			if unicode.IsSpace(r) {
+				return -1
+			}
+			return r
+		}, selection.Text())
+
+		if s != "" && s != "Reportabuse" {
+			categoryList = append(categoryList, s)
+		}
+	})
+
+	return categoryList, nil
+}
+
+func getProductDoc(url string) (q *goquery.Document, err error) {
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -148,25 +175,12 @@ func getProductCategory(url string) (categoryList []string, err error) {
 		return nil, err
 	}
 
-	q, err := goquery.NewDocumentFromResponse(resp)
+	q, err = goquery.NewDocumentFromResponse(resp)
 	if err != nil {
 		return nil, err
 	}
-	//categoryList := make([]string, 0)
-	q.Find(".a-link-normal.a-color-tertiary").Each(func(i int, selection *goquery.Selection) {
-		s := strings.Map(func(r rune) rune {
-			if unicode.IsSpace(r) {
-				return -1
-			}
-			return r
-		}, selection.Text())
 
-		if s != "" && s != "Reportabuse" {
-			categoryList = append(categoryList, s)
-		}
-	})
-
-	return categoryList, nil
+	return
 }
 
 func getReviewListToken(profileId string) (token string, reviewList []string, err error) {

@@ -6,6 +6,7 @@ type Product struct {
 	Id         int64
 	Url        string
 	CategoryId int64
+	Name       string
 	UserId     int64
 }
 
