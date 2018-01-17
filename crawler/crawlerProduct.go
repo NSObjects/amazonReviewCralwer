@@ -107,7 +107,7 @@ func sendProduct(products []models.Product) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "45.76.220.102:1323", body)
+	req, err := http.NewRequest("POST", "http://45.76.220.102:1323/", body)
 	if err != nil {
 		fmt.Println(err)
 	}
