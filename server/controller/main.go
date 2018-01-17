@@ -3,7 +3,6 @@ package main
 import (
 	"amazonReviewCralwer/models"
 	"amazonReviewCralwer/util"
-	"bytes"
 
 	"fmt"
 	"net/http"
@@ -13,9 +12,9 @@ import (
 
 	"encoding/json"
 
-	"compress/gzip"
-
 	"amazonReviewCralwer/crawler"
+
+	"io/ioutil"
 
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
@@ -62,16 +61,13 @@ func main() {
 
 	e.POST("/", func(context echo.Context) error {
 
-		reader, err := gzip.NewReader(context.Request().Body)
+		b, err := ioutil.ReadAll(context.Request().Body)
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		var b []byte
-		buf := bytes.NewBuffer(b)
-		buf.ReadFrom(reader)
 		var products []models.Product
-		if err = json.Unmarshal(buf.Bytes(), &products); err != nil {
+		if err = json.Unmarshal(b, &products); err != nil {
 			fmt.Println(err)
 		}
 		saveProducts(products)
