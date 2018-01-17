@@ -107,8 +107,10 @@ func sendProduct(products []models.Product) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "45.76.220.102:1323/", body)
-
+	req, err := http.NewRequest("POST", "45.76.220.102:1323", body)
+	if err != nil {
+		fmt.Println(err)
+	}
 	// Headers
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 	req.Header.Add("Content-Encoding", "gzip")
