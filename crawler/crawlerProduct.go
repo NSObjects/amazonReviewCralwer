@@ -13,8 +13,6 @@ import (
 
 	"encoding/json"
 
-	"compress/gzip"
-
 	"io/ioutil"
 
 	"sync"
@@ -103,18 +101,7 @@ func sendProduct(products []models.Product) {
 		return
 	}
 
-	var b bytes.Buffer
-	w := gzip.NewWriter(&b)
-	defer w.Close()
-	_, err = w.Write(j)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	w.Flush()
-
-	body := bytes.NewBuffer(b.Bytes())
+	body := bytes.NewBuffer(j)
 
 	// Create client
 	client := &http.Client{}
