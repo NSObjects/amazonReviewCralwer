@@ -24,14 +24,7 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-const Cookie = "session-id=133-8500956-2009409; " +
-	"session-id-time=2082787201l;" +
-	" ubid-main=133-6893772-5740726;" +
-	" s_cc=true; s_vnum=1947399226604&vn=1;" +
-	" s_sq=[[B]]; s_nr=1515399305583-New; " +
-	"s_dslv=1515399305584; s_ppv=100;" +
-	" a-ogbcbff=1; " +
-	"session-token=\"cZSlPMRt8u360s/ufDXaODK8+015vU0hYdlcvdE7Q95nAyjN8k+/2+GOwXFaQstzBtvCMEQAqoLREuME6kihWyFmD0WkzCL7UtAx81U4A3xAstdQtNC8HPa1/jSqtd14RY+eSpu695Lv2VHugVAo+n8qJBlOHAnhqDzSsIJxAyUtFmgGFssmVm7kByuuwil2tIr06Dq0CTFGh2MmBUf1eQ6oIhrVFFmKeFeEP09WlWK8HJzazZj5Kbm57t3l1pxiw6+Jhj5KM9tVsGXscLHY/A==\"; x-main=\"ezZ0qDyjzxneRSCR0IKIci1dA?DOIGkpwjYi0?TFgTbo5Dg72O8@dTNP4IZ@n4my\"; at-main=Atza|IwEBIHT7pByiU9me1KMaFTiD0r4OLIbVik0guwYh3mnGxvLelj2UjJDB-thUzAad5hI62iEKmxSGCWc0taQolNVTfzkhb2bxwHd3L6ldO4Acr2wVZ5cF4IyfOrWeiSVN0-rTo7eldGJR3ufwoFp5mspeKzxOFruM1JZx9x68aRnt3HTk6zpERVQHMpiQnktffDPjs3Yb2sFc0V-lwX1BtSbcZ2uWepwuOl7skiwIlCcIPVjaVVoq_6a6_mgvW2YE2BcZ65mUVPWk9QM3fyQcH17h-fTv-BTBonY_avjCCVbWZaVMMl2hmV4uklrdsog5r7zr8O0QVN1cKqVILo26E8WL0eLkWI6fCLatUn3t86XazjpRZux_mqlWHpAEhBP0cHyX9_CywtbqEt5rQjqIQQxSrn-v; sess-at-main=\"GP+xmj/5F+DSiAzermlfqyR5CwvOl2Zrfn7Iwd8uAtc=\"; sst-main=Sst1|PQHODdLpmKLUPsmWTUs5mpH4CFY1XAjRFaDM8Zly3R6fGRG1PXN-RR-BragU1OorONv41QnmEHIgx3WFk9QoEvyf2564ywr4WADsTp50fWbvQEOAQEnPK8JAX5EeIObF3lQCmJSX-1WK30c1Nj7KYwsrwSpubcvEKl6zw2mRke_DWGaNsJW1ImwLQh79V0V_JuK8B8hQx7SlM8d1EY9r1773HqQlurzRE2ZoHYv3RZ33QJVW8ycvqp9zZNzuDN6AFg1rC68jo08dst4_tGZ5CX57fg; lc-main=en_US; x-wl-uid=1bjXOXOzkydlFDdbs+hsDH18XuaxumxxDhvrejiwa7fbc9AC0HCkALwwstLnbInpMjOZwkf6ojugkuvXHP0yKP25KmErlFwTxwEpUXrOsvdu0o6MhOxn+sIEs56r6sucX5GY7CD2/y7w=; csm-hit=s-KYRJW9N1Y95HRP7BHNJ5|1515403111471"
+var Cookie = ""
 
 type Country int
 
@@ -56,7 +49,7 @@ var BaseUrl string
 func CrawlerTopReviewUser(c Country) {
 
 	BaseUrl = countryURL[c]
-
+	fmt.Println(BaseUrl)
 	o := orm.NewOrm()
 	for index := 1; index < 1000; index++ {
 		err, q := getDocument(BaseUrl, index)
@@ -71,6 +64,7 @@ func CrawlerTopReviewUser(c Country) {
 			wg.Add(1)
 
 			go func(u models.User) {
+
 				p.Run(func() {
 					if email, err := getUserEmail(u.ProfileUrl); err == nil {
 						if email != "hidden@hidden.hidden" {
