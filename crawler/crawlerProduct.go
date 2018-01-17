@@ -70,7 +70,7 @@ func GetReviewListUrl(user models.User, baseUrl string) {
 							product.Name = name
 						}
 						products = append(products, product)
-						if len(products) > 10 {
+						if len(products) > 60 {
 							sendProduct(products)
 							products = make([]models.Product, 0)
 						}
@@ -92,7 +92,7 @@ func sendProduct(products []models.Product) {
 	if len(products) <= 0 {
 		return
 	}
-	fmt.Println(products)
+
 	j, err := json.Marshal(&products)
 	if err != nil {
 		fmt.Println(err)
