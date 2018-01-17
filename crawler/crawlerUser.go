@@ -49,7 +49,7 @@ var BaseUrl string
 func CrawlerTopReviewUser(c Country) {
 
 	BaseUrl = countryURL[c]
-	fmt.Println(BaseUrl)
+
 	o := orm.NewOrm()
 	for index := 1; index < 1000; index++ {
 		err, q := getDocument(BaseUrl, index)
