@@ -300,7 +300,7 @@ func subStr(str, subStr string) string {
 func gethelpfulVotes(userId string) (int, int, error) {
 
 	client := &http.Client{}
-	url := fmt.Sprintf("https://www.amazon.com/hz/gamification/api/contributor/dashboard/%s?ownerView=false&customerFollowEnabled=false", userId)
+	url := fmt.Sprintf(BaseUrl+"/hz/gamification/api/contributor/dashboard/%s?ownerView=false&customerFollowEnabled=false", userId)
 	// Create request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
