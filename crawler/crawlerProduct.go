@@ -66,7 +66,7 @@ func GetReviewListUrl(user models.User, baseUrl string) {
 					product.Name = name
 				}
 				products = append(products, product)
-				if len(products) > 2 {
+				if len(products) > 200 {
 					sendProduct(products)
 					products = make([]models.Product, 0)
 				}
