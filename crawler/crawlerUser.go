@@ -73,15 +73,17 @@ func CrawlerTopReviewUser(c Country) {
 			go func(u models.User) {
 				p.Run(func() {
 					if email, err := getUserEmail(u.ProfileUrl); err == nil {
-						u.Email = email
-						if _, _, err := o.ReadOrCreate(&u, "profile_id"); err == nil {
-							u.Country = int(c)
-							configUser(&u)
-							if _, err := o.Update(&u); err != nil {
+						if email != "hidden@hidden.hidden" {
+							u.Email = email
+							if _, _, err := o.ReadOrCreate(&u, "profile_id"); err == nil {
+								u.Country = int(c)
+								configUser(&u)
+								if _, err := o.Update(&u); err != nil {
+									util.Logger.Error(err.Error())
+								}
+							} else {
 								util.Logger.Error(err.Error())
 							}
-						} else {
-							util.Logger.Error(err.Error())
 						}
 					} else {
 						if err != EmailNotFound {
