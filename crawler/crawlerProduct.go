@@ -17,6 +17,8 @@ import (
 
 	"io/ioutil"
 
+	"sync"
+
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -45,37 +47,48 @@ func GetReviewListUrl(user models.User, baseUrl string) {
 	}
 
 	var products []models.Product
+	p := util.New(30)
+	var wg sync.WaitGroup
+
 	for _, reviewUrl := range urls {
-		if productLink, err := getProductLint(reviewUrl); err == nil {
-			link := baseUrl + productLink
-			product := models.Product{
-				UserId: user.Id,
-				Url:    link,
-			}
-			if doc, err := getProductDoc(link); err == nil {
-				if categoryList, err := getProductCategory(doc); err == nil {
-					product.Categorys = categoryList
+		wg.Add(1)
+		go func(url string) {
+			p.Run(func() {
+				if productLink, err := getProductLint(reviewUrl); err == nil {
+					link := baseUrl + productLink
+					product := models.Product{
+						UserId: user.Id,
+						Url:    link,
+					}
+					if doc, err := getProductDoc(link); err == nil {
+						if categoryList, err := getProductCategory(doc); err == nil {
+							product.Categorys = categoryList
+						} else {
+							util.Logger.Error(err.Error())
+						}
+						if name, exists := doc.Find("#imgTagWrapperId").Children().Attr("alt"); exists {
+							product.Name = name
+						} else if name = doc.Find("#ebooksProductTitle").Text(); name != "" {
+							product.Name = name
+						} else if name = doc.Find("#productTitle").Text(); name != "" {
+							product.Name = name
+						}
+						products = append(products, product)
+						if len(products) > 200 {
+							sendProduct(products)
+							products = make([]models.Product, 0)
+						}
+					}
+
 				} else {
 					util.Logger.Error(err.Error())
 				}
-				if name, exists := doc.Find("#imgTagWrapperId").Children().Attr("alt"); exists {
-					product.Name = name
-				} else if name = doc.Find("#ebooksProductTitle").Text(); name != "" {
-					product.Name = name
-				} else if name = doc.Find("#productTitle").Text(); name != "" {
-					product.Name = name
-				}
-				products = append(products, product)
-				if len(products) > 200 {
-					sendProduct(products)
-					products = make([]models.Product, 0)
-				}
-			}
+			})
+		}(reviewUrl)
 
-		} else {
-			util.Logger.Error(err.Error())
-		}
 	}
+	wg.Wait()
+	p.Shutdown()
 
 }
 
