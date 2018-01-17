@@ -35,8 +35,8 @@
       <file leaf-file-name="main.go" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/server/crawler/main.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="84">
-              <caret line="39" column="40" lean-forward="true" selection-start-line="39" selection-start-column="40" selection-end-line="39" selection-end-column="47" />
+            <state relative-caret-position="300">
+              <caret line="27" column="32" lean-forward="true" selection-start-line="27" selection-start-column="32" selection-end-line="27" selection-end-column="32" />
               <folding>
                 <element signature="e#14#134#0" expanded="true" />
               </folding>
@@ -72,10 +72,10 @@
       <file leaf-file-name="crawlerProduct.go" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/crawler/crawlerProduct.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="143">
-              <caret line="109" column="48" lean-forward="false" selection-start-line="109" selection-start-column="48" selection-end-line="109" selection-end-column="48" />
+            <state relative-caret-position="-411">
+              <caret line="55" column="39" lean-forward="false" selection-start-line="55" selection-start-column="39" selection-end-line="55" selection-end-column="39" />
               <folding>
-                <element signature="e#17#213#0" expanded="true" />
+                <element signature="e#17#199#0" expanded="true" />
                 <element signature="n#!!block;n#getProductCategory#0" expanded="false" />
                 <element signature="n#!!block;n#getProductDoc#0" expanded="false" />
                 <element signature="n#!!block;n#getReviewListToken#0" expanded="false" />
@@ -746,16 +746,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/server/crawler/main.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="84">
-          <caret line="39" column="40" lean-forward="true" selection-start-line="39" selection-start-column="40" selection-end-line="39" selection-end-column="47" />
-          <folding>
-            <element signature="e#14#134#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/crawler/crawlerUser.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1953">
@@ -771,12 +761,22 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/server/crawler/main.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="27" column="32" lean-forward="true" selection-start-line="27" selection-start-column="32" selection-end-line="27" selection-end-column="32" />
+          <folding>
+            <element signature="e#14#134#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/crawler/crawlerProduct.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="143">
-          <caret line="109" column="48" lean-forward="false" selection-start-line="109" selection-start-column="48" selection-end-line="109" selection-end-column="48" />
+        <state relative-caret-position="-411">
+          <caret line="55" column="39" lean-forward="false" selection-start-line="55" selection-start-column="39" selection-end-line="55" selection-end-column="39" />
           <folding>
-            <element signature="e#17#213#0" expanded="true" />
+            <element signature="e#17#199#0" expanded="true" />
             <element signature="n#!!block;n#getProductCategory#0" expanded="false" />
             <element signature="n#!!block;n#getProductDoc#0" expanded="false" />
             <element signature="n#!!block;n#getReviewListToken#0" expanded="false" />

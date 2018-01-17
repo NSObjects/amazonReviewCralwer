@@ -13,8 +13,6 @@ import (
 
 	"encoding/json"
 
-	"io/ioutil"
-
 	"sync"
 
 	"github.com/PuerkitoBio/goquery"
@@ -94,7 +92,7 @@ func sendProduct(products []models.Product) {
 	if len(products) <= 0 {
 		return
 	}
-
+	fmt.Println(products)
 	j, err := json.Marshal(&products)
 	if err != nil {
 		fmt.Println(err)
@@ -115,19 +113,11 @@ func sendProduct(products []models.Product) {
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 	req.Header.Add("Content-Encoding", "gzip")
 	// Fetch Request
-	resp, err := client.Do(req)
+	_, err = client.Do(req)
 
 	if err != nil {
 		fmt.Println("Failure : ", err)
 	}
-
-	// Read Response Body
-	respBody, _ := ioutil.ReadAll(resp.Body)
-
-	// Display Results
-	fmt.Println("response Status : ", resp.Status)
-	fmt.Println("response Headers : ", resp.Header)
-	fmt.Println("response Body : ", string(respBody))
 
 }
 
