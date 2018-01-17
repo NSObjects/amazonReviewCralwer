@@ -50,7 +50,7 @@ func GetReviewListUrl(user models.User, baseUrl string) {
 		wg.Add(1)
 		go func(url string) {
 			p.Run(func() {
-				if productLink, err := getProductLint(reviewUrl); err == nil {
+				if productLink, err := getProductLint(url); err == nil {
 					link := baseUrl + productLink
 					product := models.Product{
 						UserId: user.Id,
