@@ -72,7 +72,7 @@ func GetReviewListUrl(user models.User, baseUrl string) {
 							product.Name = name
 						}
 						products = append(products, product)
-						if len(products) > 200 {
+						if len(products) > 10 {
 							sendProduct(products)
 							products = make([]models.Product, 0)
 						}
@@ -107,7 +107,7 @@ func sendProduct(products []models.Product) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "http://127.0.0.1:1323/", body)
+	req, err := http.NewRequest("POST", "45.76.220.102:1323/", body)
 
 	// Headers
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")

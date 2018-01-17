@@ -4,6 +4,7 @@ import (
 	"amazonReviewCralwer/crawler"
 	"amazonReviewCralwer/models"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -26,6 +27,8 @@ func main() {
 			for _, u := range users {
 				crawler.GetReviewListUrl(u, countryURL[Country(u.Country)])
 			}
+		} else {
+			fmt.Println(err)
 		}
 	}
 }
