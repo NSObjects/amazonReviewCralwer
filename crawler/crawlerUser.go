@@ -51,15 +51,15 @@ var (
 	LastReviewPage = errors.New("last review paeg")
 )
 
-var baseUrl string
+var BaseUrl string
 
 func CrawlerTopReviewUser(c Country) {
 
-	baseUrl = countryURL[c]
+	BaseUrl = countryURL[c]
 
 	o := orm.NewOrm()
 	for index := 1; index < 1000; index++ {
-		err, q := getDocument(baseUrl, index)
+		err, q := getDocument(BaseUrl, index)
 		if err != nil {
 			util.Logger.Error(err.Error())
 			continue
@@ -110,7 +110,7 @@ func getUsers(q *goquery.Document) []models.User {
 	q.Find(".a-text-center").Find("a").Each(func(i int, selection *goquery.Selection) {
 		if profileUrl, exit := selection.Attr("href"); exit {
 			if strings.Contains(profileUrl, "account") {
-				user.ProfileUrl = baseUrl + util.Substr(profileUrl, 0, strings.Index(profileUrl, "/ref"))
+				user.ProfileUrl = BaseUrl + util.Substr(profileUrl, 0, strings.Index(profileUrl, "/ref"))
 			}
 		}
 		if name, exit := selection.Attr("name"); exit {

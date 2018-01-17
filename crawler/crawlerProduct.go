@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"amazonReviewCralwer/models"
+	"bytes"
 	"fmt"
 	"net/http"
 	"unicode"
@@ -10,60 +11,26 @@ import (
 
 	"amazonReviewCralwer/util"
 
-	"sync"
+	"encoding/json"
+
+	"compress/gzip"
+
+	"io/ioutil"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/astaxie/beego/orm"
 )
 
-func CrawlerProduct(c Country) {
-	baseUrl = countryURL[c]
-	var lastId int64
-	o := orm.NewOrm()
-	for {
-		var users []models.User
-		_, err := o.QueryTable("user").
-			Filter("id__gt", lastId).
-			OrderBy("id").
-			Limit(1000).
-			All(&users)
-
-		if err != nil {
-			util.Logger.Error(err.Error())
-			return
+func GetReviewListUrl(user models.User, baseUrl string) {
+	var urls []string
+	if token, reviewList, err := getReviewListToken(user.ProfileId, baseUrl); err == nil {
+		for _, u := range reviewList {
+			urls = append(urls, u)
 		}
-
-		if len(users) == 0 || lastId == users[len(users)-1].Id {
-			return
-		}
-
-		lastId = users[len(users)-1].Id
-
-		p := util.New(30)
-		var wg sync.WaitGroup
-		for _, u := range users {
-			wg.Add(1)
-			go func(user models.User) {
-				p.Run(func() {
-					getReviewProduct(user)
-					wg.Done()
-				})
-			}(u)
-		}
-
-		wg.Wait()
-		p.Shutdown()
-	}
-
-}
-
-func getReviewProduct(user models.User) {
-
-	if token, reviewList, err := getReviewListToken(user.ProfileId); err == nil {
-		inserProduct(reviewList, user.Id)
 		for {
-			if token, reviewList, err = getReviewList(token); err == nil {
-				inserProduct(reviewList, user.Id)
+			if token, reviewList, err = getReviewList(token, baseUrl); err == nil {
+				for _, u := range reviewList {
+					urls = append(urls, u)
+				}
 			} else {
 				if err != LastReviewPage {
 					util.Logger.Error(err.Error())
@@ -77,65 +44,89 @@ func getReviewProduct(user models.User) {
 		}
 	}
 
-}
-
-func inserProduct(reviewList []string, userId int64) {
-	if userId == 0 {
-		panic(userId)
-	}
-	o := orm.NewOrm()
-	for _, reviewUrl := range reviewList {
+	var products []models.Product
+	for _, reviewUrl := range urls {
 		if productLink, err := getProductLint(reviewUrl); err == nil {
 			link := baseUrl + productLink
 			product := models.Product{
-				UserId: userId,
+				UserId: user.Id,
 				Url:    link,
 			}
-			if _, _, err := o.ReadOrCreate(&product, "user_id", "url"); err == nil {
-				if doc, err := getProductDoc(link); err == nil {
-					if categoryList, err := getProductCategory(doc); err == nil {
-						var categoryId int64 = 0
-						for _, c := range categoryList {
-							category := models.Category{
-								Name: c,
-							}
-							if created, id, err := o.ReadOrCreate(&category, "name"); err == nil {
-								if created {
-									category.ParentId = categoryId
-									if _, err := o.Update(&category, "parent_id"); err != nil {
-										util.Logger.Error(err.Error())
-									}
-								}
-								categoryId = id
-							} else {
-								util.Logger.Error(err.Error())
-							}
-						}
-						product.CategoryId = categoryId
-					} else {
-						util.Logger.Error(err.Error())
-					}
-					if name, exists := doc.Find("#imgTagWrapperId").Children().Attr("alt"); exists {
-						product.Name = name
-					} else if name = doc.Find("#ebooksProductTitle").Text(); name != "" {
-						product.Name = name
-					} else if name = doc.Find("#productTitle").Text(); name != "" {
-						product.Name = name
-					}
-					if _, err := o.Update(&product, "category_id", "name"); err != nil {
-						util.Logger.Error(err.Error())
-					}
-
+			if doc, err := getProductDoc(link); err == nil {
+				if categoryList, err := getProductCategory(doc); err == nil {
+					product.Categorys = categoryList
+				} else {
+					util.Logger.Error(err.Error())
 				}
-
-			} else {
-				util.Logger.Error(err.Error())
+				if name, exists := doc.Find("#imgTagWrapperId").Children().Attr("alt"); exists {
+					product.Name = name
+				} else if name = doc.Find("#ebooksProductTitle").Text(); name != "" {
+					product.Name = name
+				} else if name = doc.Find("#productTitle").Text(); name != "" {
+					product.Name = name
+				}
+				products = append(products, product)
+				if len(products) > 2 {
+					sendProduct(products)
+					products = make([]models.Product, 0)
+				}
 			}
 
 		} else {
 			util.Logger.Error(err.Error())
 		}
 	}
+
+}
+
+func sendProduct(products []models.Product) {
+	if len(products) <= 0 {
+		return
+	}
+
+	j, err := json.Marshal(&products)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	var b bytes.Buffer
+	w := gzip.NewWriter(&b)
+	defer w.Close()
+	_, err = w.Write(j)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	w.Flush()
+
+	body := bytes.NewBuffer(b.Bytes())
+
+	// Create client
+	client := &http.Client{}
+
+	// Create request
+	req, err := http.NewRequest("POST", "http://127.0.0.1:1323/", body)
+
+	// Headers
+	req.Header.Add("Content-Type", "application/json; charset=utf-8")
+	req.Header.Add("Content-Encoding", "gzip")
+	// Fetch Request
+	resp, err := client.Do(req)
+
+	if err != nil {
+		fmt.Println("Failure : ", err)
+	}
+
+	// Read Response Body
+	respBody, _ := ioutil.ReadAll(resp.Body)
+
+	// Display Results
+	fmt.Println("response Status : ", resp.Status)
+	fmt.Println("response Headers : ", resp.Header)
+	fmt.Println("response Body : ", string(respBody))
+
 }
 
 func getProductCategory(q *goquery.Document) (categoryList []string, err error) {
@@ -183,7 +174,7 @@ func getProductDoc(url string) (q *goquery.Document, err error) {
 	return
 }
 
-func getReviewListToken(profileId string) (token string, reviewList []string, err error) {
+func getReviewListToken(profileId string, baseUrl string) (token string, reviewList []string, err error) {
 
 	client := &http.Client{}
 	url := fmt.Sprintf(baseUrl+"/glimpse/timeline/%s?isWidgetOnly=true", profileId)
@@ -234,7 +225,7 @@ func getReviewListToken(profileId string) (token string, reviewList []string, er
 	return
 }
 
-func getReviewList(token string) (nextToken string, reviewList []string, err error) {
+func getReviewList(token, baseUrl string) (nextToken string, reviewList []string, err error) {
 
 	client := &http.Client{}
 	url := fmt.Sprintf(baseUrl+"/glimpse/stories/next/ref=glimp_time_pag?token=%s&context=GlimpseTimeline&id&preview=false&dogfood=false", token)

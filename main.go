@@ -20,7 +20,7 @@ import (
 //#select * from product where user_id="9" and category_id = 476
 func main() {
 	crawler.CrawlerTopReviewUser(crawler.US)
-	crawler.CrawlerProduct(crawler.US)
+	//crawler.CrawlerProduct(crawler.US)
 
 }
 
