@@ -66,6 +66,7 @@ func CrawlerTopReviewUser(c Country) {
 			go func(u models.User) {
 
 				p.Run(func() {
+
 					if email, err := getUserEmail(u.ProfileUrl); err == nil {
 						if email != "hidden@hidden.hidden" {
 							u.Email = email
@@ -218,7 +219,7 @@ func getUserEmail(profileUrl string) (email string, err error) {
 			Email string `json:"email"`
 		} `json:"data"`
 	}
-
+	fmt.Println(string(respBody))
 	if resp.StatusCode == http.StatusOK {
 		err = json.Unmarshal(respBody, &emailJSON)
 		if err != nil {
