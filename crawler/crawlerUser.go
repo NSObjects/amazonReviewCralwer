@@ -278,7 +278,7 @@ func getProfileHtml(profileUrl string) (err error, htmlstr *string) {
 func subStr(str, subStr string) string {
 	if subStr == "nameHeaderData" {
 		index := strings.Index(str, subStr)
-		if index > 0 {
+		if index > 0 && len(str) > index+len(subStr)+100 {
 			tempStr := util.Substr(str, index+23, index+len(subStr)+100)
 			if strings.Index(tempStr, "\"") > 0 {
 				return util.Substr(tempStr, 0, strings.Index(tempStr, "\""))
@@ -286,7 +286,7 @@ func subStr(str, subStr string) string {
 		}
 	} else {
 		index := strings.Index(str, subStr)
-		if index > 0 {
+		if index > 0 && len(str) > index+len(subStr)+100 {
 			tempStr := util.Substr(str, index-2, index+len(subStr)+100)
 			if strings.Index(tempStr, "\"") > 0 {
 				return util.Substr(tempStr, 0, strings.Index(tempStr, "\""))
