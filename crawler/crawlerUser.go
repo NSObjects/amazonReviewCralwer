@@ -121,6 +121,23 @@ func getUsers(q *goquery.Document) []models.User {
 }
 
 func configUser(user *models.User) {
+	var userInfo struct {
+		CustomerID     string `json:"customerId"`
+		NameHeaderData struct {
+			Name string `json:"name"`
+		} `json:"nameHeaderData"`
+		BioData struct {
+			PublicEmail string `json:"publicEmail"`
+			Social      struct {
+				HasLinks    bool `json:"hasLinks"`
+				SocialLinks []struct {
+					Type string      `json:"type"`
+					URL  interface{} `json:"url"`
+				} `json:"socialLinks"`
+			} `json:"social"`
+		} `json:"bioData"`
+	}
+
 	if err, s := getProfileHtml(user.ProfileUrl); err != nil {
 		util.Logger.Error(err.Error())
 	} else {
@@ -130,12 +147,50 @@ func configUser(user *models.User) {
 		} else {
 			util.Logger.Error(err.Error())
 		}
-		user.Twitter = subStr(*s, "https://twitter.com/")
-		user.Name = subStr(*s, "nameHeaderData")
-		user.Facebook = subStr(*s, "https://www.facebook.com/")
-		user.Instagram = subStr(*s, "https://www.instagram.com/")
-		user.Youtube = subStr(*s, "https://www.youtube.com/")
-		user.Pinterest = subStr(*s, "https://www.pinterest.com/")
+
+		d := strings.Index(s, "window.CustomerProfileRootProps = ")
+
+		if d <= 0 {
+			return
+		}
+
+		dd := s[d+len("window.CustomerProfileRootProps = ") : d+strings.Index(s[d:], "};")+1]
+		err := json.Unmarshal([]byte(dd), &userInfo)
+		if err != nil {
+			util.Logger.Error(err.Error())
+			return
+		}
+
+		user.Name = userInfo.NameHeaderData.Name
+		user.Email = userInfo.BioData.PublicEmail
+		if userInfo.BioData.Social.HasLinks == true {
+			for _, v := range userInfo.BioData.Social.SocialLinks {
+
+				switch v.Type {
+				case "facebook":
+					if s, ok := v.URL.(string); ok {
+						user.Facebook = s
+					}
+				case "twitter":
+					if s, ok := v.URL.(string); ok {
+						user.Twitter = s
+					}
+				case "pinterest":
+					if s, ok := v.URL.(string); ok {
+						user.Pinterest = s
+					}
+				case "instagram":
+					if s, ok := v.URL.(string); ok {
+						user.Instagram = s
+					}
+				case "youtube":
+					if s, ok := v.URL.(string); ok {
+						user.Youtube = s
+					}
+
+				}
+			}
+		}
 	}
 
 }
@@ -234,7 +289,7 @@ func getUserEmail(profileUrl string) (email string, err error) {
 	return "", EmailNotFound
 }
 
-func getProfileHtml(profileUrl string) (err error, htmlstr *string) {
+func getProfileHtml(profileUrl string) (err error, htmlstr string) {
 
 	client := &http.Client{}
 	// Create request
@@ -250,7 +305,7 @@ func getProfileHtml(profileUrl string) (err error, htmlstr *string) {
 	// Fetch Request
 	resp, err := client.Do(req)
 	if err != nil {
-		return err, nil
+		return err, htmlstr
 	}
 
 	defer resp.Body.Close()
@@ -259,7 +314,7 @@ func getProfileHtml(profileUrl string) (err error, htmlstr *string) {
 	case "gzip":
 		reader, err = gzip.NewReader(resp.Body)
 		if err != nil {
-			return err, nil
+			return err, htmlstr
 		}
 	default:
 		reader = resp.Body
@@ -269,10 +324,10 @@ func getProfileHtml(profileUrl string) (err error, htmlstr *string) {
 	buf := bytes.NewBuffer(b)
 	_, err = buf.ReadFrom(reader)
 	if err != nil {
-		return err, nil
+		return err, htmlstr
 	}
 	s := string(buf.Bytes())
-	return nil, &s
+	return nil, s
 }
 
 func subStr(str, subStr string) string {

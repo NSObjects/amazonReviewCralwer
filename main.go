@@ -6,6 +6,12 @@ import (
 
 	"time"
 
+	"io/ioutil"
+
+	"strings"
+
+	"encoding/json"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
@@ -16,11 +22,24 @@ import (
 //#select count(*) from product where user_id=3
 //#select category_id,COUNT(*) from product where user_id="2" and category_id > 0 GROUP BY category_id ORDER BY  COUNT(*) desc;
 //#select * from product where user_id="9" and category_id = 476
+//var s = " \"nameHeaderData\": {\"name\": \"粗茶ですが( ^-^)_旦‾\",\"profileExists\": true,\"inlineEditData\": null,\"isVerified\": false,\"urls\": {\"editButtonImageUrl\": \"//d1k8kvpjaf8geh.cloudfront.net/gp/profile/assets/icon_edit-0d9b7d9307686accef07de74ec135cb0c9847bd4a0cd810eeccb730723bc5b5c.png\" } },"
+
 func main() {
+
+	b, _ := ioutil.ReadFile("h.htm")
+	s := string(b)
+
+	d := strings.Index(s, "window.CustomerProfileRootProps = ")
+
+	if d > 0 {
+		dd := s[d+len("window.CustomerProfileRootProps = ") : d+strings.Index(s[d:], "};")+1]
+		json.Unmarshal([]byte(dd), &userInfo)
+
+	}
 	//crawler.CrawlerTopReviewUser(crawler.US)
 	//crawler.CrawlerProduct(crawler.US)
-	q := loadDoc()
-	fmt.Println(q.Find("a.a-link-normal").Attr("href"))
+	//q := loadDoc()
+	//fmt.Println(q.Find("a.a-link-normal").Attr("href"))
 	//q.Find("a.a-link-normal").Each(func(i int, selection *goquery.Selection) {
 	//	if s, exits := selection.Attr("data-hook"); exits {
 	//		fmt.Println(s)
