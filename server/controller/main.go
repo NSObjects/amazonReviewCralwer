@@ -65,7 +65,7 @@ func main() {
 
 		if len(users) == 0 || l == users[len(users)-1].Id {
 			lastId <- 0
-			return context.String(http.StatusBadRequest, err.Error())
+			return context.String(http.StatusBadRequest, "last")
 		}
 		lastId <- users[len(users)-1].Id
 		return context.JSON(http.StatusOK, users)

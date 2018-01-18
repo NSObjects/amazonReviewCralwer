@@ -62,11 +62,8 @@ func CrawlerTopReviewUser(c Country) {
 
 		for _, user := range getUsers(q) {
 			wg.Add(1)
-
 			go func(u models.User) {
-
 				p.Run(func() {
-
 					if email, err := getUserEmail(u.ProfileUrl); err == nil {
 						if email != "hidden@hidden.hidden" {
 							u.Email = email
@@ -87,10 +84,10 @@ func CrawlerTopReviewUser(c Country) {
 					}
 
 					wg.Done()
+
 				})
 
 			}(user)
-
 		}
 		wg.Wait()
 		p.Shutdown()
