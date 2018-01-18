@@ -41,6 +41,7 @@ func getuser() (error, []models.User) {
 	var users []models.User
 	err = json.Unmarshal(respBody, &users)
 	if err != nil {
+		util.Logger.Error(string(respBody))
 		return err, nil
 	}
 
