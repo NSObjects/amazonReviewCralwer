@@ -5,9 +5,9 @@ import (
 
 	"time"
 
-	"strings"
-
 	"amazonReviewCralwer/util"
+
+	"fmt"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
@@ -22,14 +22,19 @@ import (
 //var s = " \"nameHeaderData\": {\"name\": \"粗茶ですが( ^-^)_旦‾\",\"profileExists\": true,\"inlineEditData\": null,\"isVerified\": false,\"urls\": {\"editButtonImageUrl\": \"//d1k8kvpjaf8geh.cloudfront.net/gp/profile/assets/icon_edit-0d9b7d9307686accef07de74ec135cb0c9847bd4a0cd810eeccb730723bc5b5c.png\" } },"
 
 func main() {
+	//s := "https://www.amazon.co.jp/gp/profile/amzn1.account.AEPFMU6MODEHFQ253YZMIOZAJ4CQ/ref=cm_cr_tr_tbl_511_name"
+	//i := strings.Index(s, "account.") + 8
+	//fmt.Println(s[i : i+strings.Index(s[i:], "/")])
 
 	//crawler.CrawlerTopReviewUser(crawler.US)
 	//crawler.CrawlerProduct(crawler.US)
 	q := loadDoc()
 	//fmt.Println(q.Find("a.a-link-normal").Attr("href"))
-	q.Find("a.a-link-normal.a-color-tertiary").Each(func(i int, selection *goquery.Selection) {
-		s := strings.TrimSpace(selection.Text())
-		if s != "Report abuse" {
+	q.Find("a.a-link-normal").Each(func(i int, selection *goquery.Selection) {
+		if s, exits := selection.Attr("data-hook"); exits {
+			if s == "product-link" {
+				fmt.Println(selection.Attr("href"))
+			}
 
 		}
 	})

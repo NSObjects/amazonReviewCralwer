@@ -14,31 +14,41 @@ import (
 
 	"sync"
 
+	"io/ioutil"
+
 	"github.com/PuerkitoBio/goquery"
 )
 
 func GetReviewListUrl(user models.User) {
 	var urls []string
-	if token, reviewList, err := getReviewListToken(user.ProfileId); err == nil {
-		for _, u := range reviewList {
-			urls = append(urls, u)
-		}
-		for {
-			if token, reviewList, err = getReviewList(token); err == nil {
-				for _, u := range reviewList {
-					urls = append(urls, u)
+	switch util.Country(user.Country) {
+	case util.US:
+		if token, reviewList, err := getReviewListToken(user.ProfileId); err == nil {
+			for _, u := range reviewList {
+				urls = append(urls, u)
+			}
+			for {
+				if token, reviewList, err = getReviewList(token); err == nil {
+					for _, u := range reviewList {
+						urls = append(urls, u)
+					}
+				} else {
+					if err != LastReviewPage {
+						util.Logger.Error(err.Error())
+					}
+					break
 				}
-			} else {
-				if err != LastReviewPage {
-					util.Logger.Error(err.Error())
-				}
-				break
+			}
+		} else {
+			if err != TokenNotFound {
+				util.Logger.Error(err.Error())
+				return
 			}
 		}
-	} else {
-		if err != TokenNotFound {
-			util.Logger.Error(err.Error())
-		}
+	case util.JAPAN:
+		url := user.ProfileUrl
+		i := strings.Index(url, "account.") + 8
+		urls = getJPReviewList(url[i:])
 	}
 
 	var products []models.Product
@@ -87,6 +97,71 @@ func GetReviewListUrl(user models.User) {
 
 }
 
+func getJPReviewList(profileId string) []string {
+
+	var index int
+	list := make([]string, 0)
+	for {
+
+		client := &http.Client{}
+		url := fmt.Sprintf("https://www.amazon.co.jp/gp/profile/amzn1.account.%s/activity_feed?review_offset=%d", profileId, index*10)
+
+		req, err := http.NewRequest("GET", url, nil)
+
+		// Headers
+		req.Header.Add("Accept", "*/*")
+		req.Header.Add("Cookie", "x-wl-uid=1aQWRn7TwQAv4mngfMGdQQMzqbVvaJypQekW0WHfP8uXS2AeNgCe5Wvf1L8eKSJ9k8HDZvBCqyVqlYhjyLmUUkB+nnLKYzfY8pjqHL4RL93iDe7jKSsXX2B/3qEEBA6xlGTAtubLojl0=; ubid-acbjp=357-4101823-5570864; session-token=fdHy8mZNRH4UIKML0PI/evaCgSFNTQaxBV58mazqKARB9NAxj91a6oO4SiOuTC54DbVcFrVghy/sy/8RDhg3uIPJSVPcRKwBP9iqs2lC8PG7UluAI9yk8HR8DeV70YJG7H8TXbbImF4asHvCKtMOlN1r0unmKrVT17FAINyy3mJx0XI00hrSwEE2cg4bgC7nkmH8jjs2ohTmZdnUzavoVCcPUInuHuLetBH/503wSWr/JJ2jEr+UNHG3TnOnhrRruG8M+Xgthuk=; session-id-time=2082726001l; session-id=355-9214000-6210429")
+		req.Header.Add("Referer", "https://www.amazon.co.jp/gp/profile/amzn1.account.AGBZ2GB6CLXKYJSCPUCZLR72ZNYQ?language=en_US")
+		req.Header.Add("Host", "www.amazon.co.jp")
+		req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
+		req.Header.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7")
+		req.Header.Add("X-Requested-With", "XMLHttpRequest")
+		parseFormErr := req.ParseForm()
+		if parseFormErr != nil {
+			util.Logger.Error(err.Error())
+			break
+		}
+
+		// Fetch Request
+		resp, err := client.Do(req)
+
+		if err != nil {
+			util.Logger.Error(err.Error())
+			break
+		}
+
+		var reviewList struct {
+			Reviews []struct {
+				FullReviewPath string `json:"fullReviewPath"`
+			} `json:"reviews"`
+			NextOffset int `json:"nextOffset"`
+		}
+
+		// Read Response Body
+		respBody, _ := ioutil.ReadAll(resp.Body)
+
+		err = json.Unmarshal(respBody, &reviewList)
+		if err != nil {
+			util.Logger.Error(err.Error())
+			break
+		}
+
+		if len(reviewList.Reviews) <= 0 {
+			break
+		}
+
+		for _, v := range reviewList.Reviews {
+			list = append(list, util.BaseUrl+v.FullReviewPath)
+		}
+
+		index++
+
+	}
+
+	return list
+
+}
+
 func sendProduct(products []models.Product) {
 	if len(products) <= 0 {
 		return
@@ -104,7 +179,7 @@ func sendProduct(products []models.Product) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "http://45.76.220.102:1323/", body)
+	req, err := http.NewRequest("POST", "http://127.0.0.1:1323/", body)
 	if err != nil {
 		util.Logger.Error(err.Error())
 	}
@@ -276,8 +351,21 @@ func getProductLint(reviewUrl string) (productUrl string, err error) {
 		return productUrl, err
 	}
 
-	if link, exists := q.Find("a.a-link-normal").Attr("href"); exists {
-		return link, nil
+	q.Find("a.a-link-normal").Each(func(i int, selection *goquery.Selection) {
+		if s, exits := selection.Attr("data-hook"); exits {
+			if s == "product-link" {
+
+				if url, exits := selection.Attr("href"); exits {
+					url += "&language=en_US"
+					productUrl = url
+				}
+			}
+
+		}
+	})
+
+	if productUrl != "" {
+		return productUrl, nil
 	}
 
 	return "", fmt.Errorf("product url not found /n %s", reviewUrl)
