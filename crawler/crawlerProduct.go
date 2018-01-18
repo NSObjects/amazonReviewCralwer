@@ -283,21 +283,8 @@ func getProductLint(reviewUrl string) (productUrl string, err error) {
 		return productUrl, err
 	}
 
-	var str string
-	q.Find(".a-link-normal").Each(func(i int, selection *goquery.Selection) {
-		str, _ = selection.Attr("data-hook")
-
-		if str == "product-link" {
-			if url, exist := selection.Attr("href"); exist {
-				if url != "" {
-					productUrl = url
-				}
-			}
-		}
-	})
-
-	if productUrl != "" {
-		return productUrl, nil
+	if link, exists := q.Find("a.a-link-normal").Attr("href"); exists {
+		return link, nil
 	}
 
 	return "", fmt.Errorf("product url not found /n %s", reviewUrl)

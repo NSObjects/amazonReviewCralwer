@@ -6,8 +6,6 @@ import (
 
 	"time"
 
-	"amazonReviewCralwer/crawler"
-
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
@@ -19,8 +17,17 @@ import (
 //#select category_id,COUNT(*) from product where user_id="2" and category_id > 0 GROUP BY category_id ORDER BY  COUNT(*) desc;
 //#select * from product where user_id="9" and category_id = 476
 func main() {
-	crawler.CrawlerTopReviewUser(crawler.US)
+	//crawler.CrawlerTopReviewUser(crawler.US)
 	//crawler.CrawlerProduct(crawler.US)
+	q := loadDoc()
+	fmt.Println(q.Find("a.a-link-normal").Attr("href"))
+	//q.Find("a.a-link-normal").Each(func(i int, selection *goquery.Selection) {
+	//	if s, exits := selection.Attr("data-hook"); exits {
+	//		fmt.Println(s)
+	//		fmt.Println(selection.Attr("href"))
+	//	}
+	//
+	//})
 
 }
 
