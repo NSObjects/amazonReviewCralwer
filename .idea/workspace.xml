@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="144e6451-6023-480f-b92c-c1183e2a2222" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/server/crawler/main.go" afterPath="$PROJECT_DIR$/server/crawler/main.go" />
+      <change beforePath="$PROJECT_DIR$/crawler/crawlerProduct.go" afterPath="$PROJECT_DIR$/crawler/crawlerProduct.go" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -264,11 +264,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="crawlerProduct.go" pinned="false" current-in-tab="false">
+      <file leaf-file-name="crawlerProduct.go" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/crawler/crawlerProduct.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="454">
-              <caret line="176" column="32" lean-forward="true" selection-start-line="176" selection-start-column="32" selection-end-line="176" selection-end-column="32" />
+            <state relative-caret-position="1111">
+              <caret line="117" column="38" lean-forward="false" selection-start-line="117" selection-start-column="38" selection-end-line="117" selection-end-column="38" />
               <folding>
                 <element signature="n#!!block;n#getProductDoc#0" expanded="false" />
                 <element signature="n#!!block;n#getReviewList#0" expanded="false" />
@@ -287,10 +287,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="main.go" pinned="false" current-in-tab="true">
+      <file leaf-file-name="main.go" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/server/crawler/main.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="603">
+            <state relative-caret-position="272">
               <caret line="40" column="0" lean-forward="true" selection-start-line="40" selection-start-column="0" selection-end-line="40" selection-end-column="0" />
               <folding>
                 <element signature="e#14#134#0" expanded="true" />
@@ -302,10 +302,9 @@
       <file leaf-file-name="main.go" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/server/controller/main.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="380">
-              <caret line="32" column="1506" lean-forward="true" selection-start-line="32" selection-start-column="12" selection-end-line="32" selection-end-column="1506" />
+            <state relative-caret-position="149">
+              <caret line="21" column="38" lean-forward="true" selection-start-line="21" selection-start-column="38" selection-end-line="21" selection-end-column="38" />
               <folding>
-                <element signature="e#14#284#0" expanded="true" />
                 <element signature="n#!!block;n#init#0" expanded="false" />
               </folding>
             </state>
@@ -315,10 +314,9 @@
       <file leaf-file-name="crawlerUser.go" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/crawler/crawlerUser.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="234">
-              <caret line="26" column="4" lean-forward="false" selection-start-line="26" selection-start-column="4" selection-end-line="26" selection-end-column="4" />
+            <state relative-caret-position="108">
+              <caret line="20" column="13" lean-forward="true" selection-start-line="20" selection-start-column="13" selection-end-line="20" selection-end-column="13" />
               <folding>
-                <element signature="e#17#278#0" expanded="true" />
                 <element signature="e#1073#1437#0" expanded="false" />
                 <element signature="e#3418#3965#0" expanded="false" />
               </folding>
@@ -347,7 +345,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>US</find>
       <find>/KETO-DIET-Lifestyle-Step-Step-ebook/dp/B077WL7TK2/ref=cm_cr_srp_d_product_top?ie=UTF8</find>
       <find>data</find>
       <find>getProduct</find>
@@ -377,6 +374,7 @@
       <find>product url not found</find>
       <find>configUser</find>
       <find>a-link-normal</find>
+      <find>fmt.p</find>
     </findStrings>
     <replaceStrings>
       <replace>util.Logger.Error(err.Error())</replace>
@@ -402,10 +400,10 @@
         <option value="$PROJECT_DIR$/models/product.go" />
         <option value="$PROJECT_DIR$/h.htm" />
         <option value="$PROJECT_DIR$/main.go" />
-        <option value="$PROJECT_DIR$/crawler/crawlerProduct.go" />
         <option value="$PROJECT_DIR$/crawler/crawlerUser.go" />
         <option value="$PROJECT_DIR$/server/controller/main.go" />
         <option value="$PROJECT_DIR$/server/crawler/main.go" />
+        <option value="$PROJECT_DIR$/crawler/crawlerProduct.go" />
       </list>
     </option>
   </component>
@@ -625,7 +623,8 @@
     <MESSAGE value="add product name" />
     <MESSAGE value="remove email equal hidden@" />
     <MESSAGE value="remove" />
-    <option name="LAST_COMMIT_MESSAGE" value="remove" />
+    <MESSAGE value="cookie" />
+    <option name="LAST_COMMIT_MESSAGE" value="cookie" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1153,29 +1152,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/crawler/crawlerUser.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="234">
-          <caret line="26" column="4" lean-forward="false" selection-start-line="26" selection-start-column="4" selection-end-line="26" selection-end-column="4" />
-          <folding>
-            <element signature="e#17#278#0" expanded="true" />
-            <element signature="e#1073#1437#0" expanded="false" />
-            <element signature="e#3418#3965#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/crawler/crawlerProduct.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="454">
-          <caret line="176" column="32" lean-forward="true" selection-start-line="176" selection-start-column="32" selection-end-line="176" selection-end-column="32" />
-          <folding>
-            <element signature="n#!!block;n#getProductDoc#0" expanded="false" />
-            <element signature="n#!!block;n#getReviewList#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/main.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="262">
@@ -1184,23 +1160,44 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/server/crawler/main.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="272">
+          <caret line="40" column="0" lean-forward="true" selection-start-line="40" selection-start-column="0" selection-end-line="40" selection-end-column="0" />
+          <folding>
+            <element signature="e#14#134#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/server/controller/main.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="380">
-          <caret line="32" column="1506" lean-forward="true" selection-start-line="32" selection-start-column="12" selection-end-line="32" selection-end-column="1506" />
+        <state relative-caret-position="149">
+          <caret line="21" column="38" lean-forward="true" selection-start-line="21" selection-start-column="38" selection-end-line="21" selection-end-column="38" />
           <folding>
-            <element signature="e#14#284#0" expanded="true" />
             <element signature="n#!!block;n#init#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/server/crawler/main.go">
+    <entry file="file://$PROJECT_DIR$/crawler/crawlerUser.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="603">
-          <caret line="40" column="0" lean-forward="true" selection-start-line="40" selection-start-column="0" selection-end-line="40" selection-end-column="0" />
+        <state relative-caret-position="108">
+          <caret line="20" column="13" lean-forward="true" selection-start-line="20" selection-start-column="13" selection-end-line="20" selection-end-column="13" />
           <folding>
-            <element signature="e#14#134#0" expanded="true" />
+            <element signature="e#1073#1437#0" expanded="false" />
+            <element signature="e#3418#3965#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/crawler/crawlerProduct.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1111">
+          <caret line="117" column="38" lean-forward="false" selection-start-line="117" selection-start-column="38" selection-end-line="117" selection-end-column="38" />
+          <folding>
+            <element signature="n#!!block;n#getProductDoc#0" expanded="false" />
+            <element signature="n#!!block;n#getReviewList#0" expanded="false" />
           </folding>
         </state>
       </provider>

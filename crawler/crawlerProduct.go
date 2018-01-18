@@ -94,7 +94,7 @@ func sendProduct(products []models.Product) {
 
 	j, err := json.Marshal(&products)
 	if err != nil {
-		fmt.Println(err)
+		util.Logger.Error(err.Error())
 		return
 	}
 
@@ -106,7 +106,7 @@ func sendProduct(products []models.Product) {
 	// Create request
 	req, err := http.NewRequest("POST", "http://45.76.220.102:1323/", body)
 	if err != nil {
-		fmt.Println(err)
+		util.Logger.Error(err.Error())
 	}
 	// Headers
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
@@ -115,7 +115,7 @@ func sendProduct(products []models.Product) {
 	_, err = client.Do(req)
 
 	if err != nil {
-		fmt.Println("Failure : ", err)
+		util.Logger.Error(err.Error())
 	}
 
 }
