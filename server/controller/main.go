@@ -92,14 +92,14 @@ func saveProducts(products []models.Product) {
 				category := models.Category{
 					Name: c,
 				}
-				if created, id, err := o.ReadOrCreate(&category, "name"); err == nil {
+				if created, _, err := o.ReadOrCreate(&category, "name"); err == nil {
 					if created {
 						category.ParentId = categoryId
 						if _, err := o.Update(&category, "parent_id"); err != nil {
 							util.Logger.Error(err.Error())
 						}
 					}
-					categoryId = id
+					categoryId = category.Id
 				} else {
 					util.Logger.Error(err.Error())
 				}
