@@ -210,7 +210,6 @@ func getUserEmail(profileUrl string) (email string, err error) {
 		return "", err
 	}
 
-	// Read Response Body
 	respBody, _ := ioutil.ReadAll(resp.Body)
 
 	var emailJSON struct {
@@ -219,7 +218,7 @@ func getUserEmail(profileUrl string) (email string, err error) {
 			Email string `json:"email"`
 		} `json:"data"`
 	}
-	fmt.Println(string(respBody))
+
 	if resp.StatusCode == http.StatusOK {
 		err = json.Unmarshal(respBody, &emailJSON)
 		if err != nil {
