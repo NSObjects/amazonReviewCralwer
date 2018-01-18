@@ -4,7 +4,6 @@ import (
 	"amazonReviewCralwer/models"
 	"amazonReviewCralwer/util"
 
-	"fmt"
 	"net/http"
 	"time"
 
@@ -75,12 +74,14 @@ func main() {
 
 		b, err := ioutil.ReadAll(context.Request().Body)
 		if err != nil {
-			fmt.Println(err)
+			util.Logger.Error(err.Error())
+			return context.String(200, err.Error())
 		}
 
 		var products []models.Product
 		if err = json.Unmarshal(b, &products); err != nil {
-			fmt.Println(err)
+			util.Logger.Error(err.Error())
+			return context.String(200, err.Error())
 		}
 		saveProducts(products)
 		return context.String(200, "")
@@ -128,11 +129,11 @@ func init() {
 	local, err := time.LoadLocation("Asia/Shanghai")
 
 	if err != nil {
-		fmt.Println(err)
+		util.Logger.Error(err.Error())
 	}
 	time.Local = local
 	err = orm.RegisterDataBase("default", "mysql", "root:123456@tcp(127.0.0.1:3306)/amazon?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai", 30, 30)
 	if err != nil {
-		fmt.Println(err)
+		util.Logger.Error(err.Error())
 	}
 }

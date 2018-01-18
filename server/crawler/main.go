@@ -3,8 +3,8 @@ package main
 import (
 	"amazonReviewCralwer/crawler"
 	"amazonReviewCralwer/models"
+	"amazonReviewCralwer/util"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -42,7 +42,7 @@ func main() {
 				crawler.GetReviewListUrl(u, countryURL[Country(u.Country)])
 			}
 		} else {
-			fmt.Println(err)
+			util.Logger.Error(err.Error())
 		}
 	}
 }

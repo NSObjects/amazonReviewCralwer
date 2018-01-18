@@ -1,12 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"time"
 
 	"strings"
+
+	"amazonReviewCralwer/util"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
@@ -56,11 +57,11 @@ func init() {
 	local, err := time.LoadLocation("Asia/Shanghai")
 
 	if err != nil {
-		fmt.Println(err)
+		util.Logger.Error(err.Error())
 	}
 	time.Local = local
 	err = orm.RegisterDataBase("default", "mysql", "root:123456@tcp(127.0.0.1:3306)/amazon?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai", 30, 30)
 	if err != nil {
-		fmt.Println(err)
+		util.Logger.Error(err.Error())
 	}
 }
