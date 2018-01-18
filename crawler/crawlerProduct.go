@@ -17,14 +17,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func GetReviewListUrl(user models.User, baseUrl string) {
+func GetReviewListUrl(user models.User) {
 	var urls []string
-	if token, reviewList, err := getReviewListToken(user.ProfileId, baseUrl); err == nil {
+	if token, reviewList, err := getReviewListToken(user.ProfileId); err == nil {
 		for _, u := range reviewList {
 			urls = append(urls, u)
 		}
 		for {
-			if token, reviewList, err = getReviewList(token, baseUrl); err == nil {
+			if token, reviewList, err = getReviewList(token); err == nil {
 				for _, u := range reviewList {
 					urls = append(urls, u)
 				}
@@ -50,7 +50,7 @@ func GetReviewListUrl(user models.User, baseUrl string) {
 		go func(url string) {
 			p.Run(func() {
 				if productLink, err := getProductLint(url); err == nil {
-					link := baseUrl + productLink
+					link := util.BaseUrl + productLink
 					product := models.Product{
 						UserId: user.Id,
 						Url:    link,
@@ -140,7 +140,7 @@ func getProductDoc(url string) (q *goquery.Document, err error) {
 	req.Header.Add("Accept", "text/html, */*; q=0.01")
 	req.Header.Add("Referer", url)
 	req.Header.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7")
-	req.Header.Add("Cookie", Cookie)
+	req.Header.Add("Cookie", util.Cookie)
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 	if err != nil {
 		return nil, err
@@ -159,10 +159,10 @@ func getProductDoc(url string) (q *goquery.Document, err error) {
 	return
 }
 
-func getReviewListToken(profileId string, baseUrl string) (token string, reviewList []string, err error) {
+func getReviewListToken(profileId string) (token string, reviewList []string, err error) {
 
 	client := &http.Client{}
-	url := fmt.Sprintf(baseUrl+"/glimpse/timeline/%s?isWidgetOnly=true", profileId)
+	url := fmt.Sprintf(util.BaseUrl+"/glimpse/timeline/%s?isWidgetOnly=true", profileId)
 	// Create request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -172,9 +172,9 @@ func getReviewListToken(profileId string, baseUrl string) (token string, reviewL
 	// Headers
 	req.Header.Add("X-Requested-With", "XMLHttpRequest")
 	req.Header.Add("Accept", "text/html, */*; q=0.01")
-	req.Header.Add("Referer", fmt.Sprintf(baseUrl+"/gp/profile/amzn1.account.%s", profileId))
+	req.Header.Add("Referer", fmt.Sprintf(util.BaseUrl+"/gp/profile/amzn1.account.%s", profileId))
 	req.Header.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7")
-	req.Header.Add("Cookie", Cookie)
+	req.Header.Add("Cookie", util.Cookie)
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 
 	parseFormErr := req.ParseForm()
@@ -210,10 +210,10 @@ func getReviewListToken(profileId string, baseUrl string) (token string, reviewL
 	return
 }
 
-func getReviewList(token, baseUrl string) (nextToken string, reviewList []string, err error) {
+func getReviewList(token string) (nextToken string, reviewList []string, err error) {
 
 	client := &http.Client{}
-	url := fmt.Sprintf(baseUrl+"/glimpse/stories/next/ref=glimp_time_pag?token=%s&context=GlimpseTimeline&id&preview=false&dogfood=false", token)
+	url := fmt.Sprintf(util.BaseUrl+"/glimpse/stories/next/ref=glimp_time_pag?token=%s&context=GlimpseTimeline&id&preview=false&dogfood=false", token)
 
 	req, err := http.NewRequest("GET", url, nil)
 
@@ -262,7 +262,7 @@ func getProductLint(reviewUrl string) (productUrl string, err error) {
 		return productUrl, err
 	}
 	// Headers
-	req.Header.Add("Cookie", Cookie)
+	req.Header.Add("Cookie", util.Cookie)
 
 	// Fetch Request
 	resp, err := client.Do(req)

@@ -24,35 +24,17 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-var Cookie = ""
-
-type Country int
-
-const (
-	JAPAN Country = iota
-	US
-)
-
-var countryURL = map[Country]string{
-	JAPAN: "https://www.amazon.co.jp",
-	US:    "https://www.amazon.com",
-}
-
 var (
 	EmailNotFound  = errors.New("email not found")
 	TokenNotFound  = errors.New("token not found")
 	LastReviewPage = errors.New("last review paeg")
 )
 
-var BaseUrl string
-
-func CrawlerTopReviewUser(c Country) {
-
-	BaseUrl = countryURL[c]
+func CrawlerTopReviewUser(c util.Country) {
 
 	o := orm.NewOrm()
 	for index := 1; index < 1000; index++ {
-		err, q := getDocument(BaseUrl, index)
+		err, q := getDocument(util.BaseUrl, index)
 		if err != nil {
 			util.Logger.Error(err.Error())
 			continue
@@ -102,7 +84,7 @@ func getUsers(q *goquery.Document) []models.User {
 	q.Find(".a-text-center").Find("a").Each(func(i int, selection *goquery.Selection) {
 		if profileUrl, exit := selection.Attr("href"); exit {
 			if strings.Contains(profileUrl, "account") {
-				user.ProfileUrl = BaseUrl + util.Substr(profileUrl, 0, strings.Index(profileUrl, "/ref"))
+				user.ProfileUrl = util.BaseUrl + util.Substr(profileUrl, 0, strings.Index(profileUrl, "/ref"))
 			}
 		}
 		if name, exit := selection.Attr("name"); exit {
@@ -202,7 +184,7 @@ func getDocument(url string, page int) (err error, g *goquery.Document) {
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 	req.Header.Add("Accept-Encoding", "gzip, deflate, br")
 	req.Header.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7")
-	req.Header.Add("Cookie", Cookie)
+	req.Header.Add("Cookie", util.Cookie)
 	req.Header.Add("Referer", u)
 
 	parseFormErr := req.ParseForm()
@@ -251,7 +233,7 @@ func getUserEmail(profileUrl string) (email string, err error) {
 	req.Header.Add("X-Requested-With", "XMLHttpRequest")
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 	req.Header.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7")
-	req.Header.Add("Cookie", Cookie)
+	req.Header.Add("Cookie", util.Cookie)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
 	req.Header.Add("Referer", profileUrl)
 
@@ -295,7 +277,7 @@ func getProfileHtml(profileUrl string) (err error, htmlstr string) {
 	// Headers
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 	req.Header.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7")
-	req.Header.Add("Cookie", Cookie)
+	req.Header.Add("Cookie", util.Cookie)
 	req.Header.Add("If-None-Match", "W/\"4faafffbc5625b34d37ce3693b471d9c-gzip\"")
 	req.Header.Add("Referer", profileUrl)
 
@@ -327,39 +309,17 @@ func getProfileHtml(profileUrl string) (err error, htmlstr string) {
 	return nil, s
 }
 
-func subStr(str, subStr string) string {
-	if subStr == "nameHeaderData" {
-		index := strings.Index(str, subStr)
-		if index > 0 && len(str) > index+len(subStr)+20 {
-			tempStr := util.Substr(str, index+23, index+len(subStr)+20)
-			if strings.Index(tempStr, "\"") > 0 {
-				return util.Substr(tempStr, 0, strings.Index(tempStr, "\""))
-			}
-		}
-	} else {
-		index := strings.Index(str, subStr)
-		if index > 0 && len(str) > index+len(subStr)+30 {
-			tempStr := util.Substr(str, index-2, index+len(subStr)+30)
-			if strings.Index(tempStr, "\"") > 0 {
-				return util.Substr(tempStr, 0, strings.Index(tempStr, "\""))
-			}
-		}
-	}
-
-	return ""
-}
-
 func gethelpfulVotes(userId string) (int, int, error) {
 
 	client := &http.Client{}
-	url := fmt.Sprintf(BaseUrl+"/hz/gamification/api/contributor/dashboard/%s?ownerView=false&customerFollowEnabled=false", userId)
+	url := fmt.Sprintf(util.BaseUrl+"/hz/gamification/api/contributor/dashboard/%s?ownerView=false&customerFollowEnabled=false", userId)
 	// Create request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, 0, err
 	}
 	// Headers
-	req.Header.Add("Cookie", Cookie)
+	req.Header.Add("Cookie", util.Cookie)
 
 	// Fetch Request
 	resp, err := client.Do(req)
