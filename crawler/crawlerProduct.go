@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"unicode"
 
 	"strings"
 
@@ -123,15 +122,9 @@ func sendProduct(products []models.Product) {
 
 func getProductCategory(q *goquery.Document) (categoryList []string, err error) {
 
-	q.Find(".a-link-normal.a-color-tertiary").Each(func(i int, selection *goquery.Selection) {
-		s := strings.Map(func(r rune) rune {
-			if unicode.IsSpace(r) {
-				return -1
-			}
-			return r
-		}, selection.Text())
-
-		if s != "" && s != "Reportabuse" {
+	q.Find("a.a-link-normal.a-color-tertiary").Each(func(i int, selection *goquery.Selection) {
+		s := strings.TrimSpace(selection.Text())
+		if s != "Report abuse" && s != "" {
 			categoryList = append(categoryList, s)
 		}
 	})

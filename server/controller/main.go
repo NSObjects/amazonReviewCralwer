@@ -16,6 +16,8 @@ import (
 
 	"io/ioutil"
 
+	"strings"
+
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -113,7 +115,10 @@ func saveProducts(products []models.Product) {
 				util.Logger.Error(err.Error())
 			}
 		} else {
-			util.Logger.Error(err.Error())
+			if strings.Contains(err.Error(), "Error 1062: Duplicate entry") == false {
+				util.Logger.Error(err.Error())
+			}
+
 		}
 	}
 

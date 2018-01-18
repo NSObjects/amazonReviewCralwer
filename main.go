@@ -6,11 +6,7 @@ import (
 
 	"time"
 
-	"io/ioutil"
-
 	"strings"
-
-	"encoding/json"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
@@ -26,27 +22,16 @@ import (
 
 func main() {
 
-	b, _ := ioutil.ReadFile("h.htm")
-	s := string(b)
-
-	d := strings.Index(s, "window.CustomerProfileRootProps = ")
-
-	if d > 0 {
-		dd := s[d+len("window.CustomerProfileRootProps = ") : d+strings.Index(s[d:], "};")+1]
-		json.Unmarshal([]byte(dd), &userInfo)
-
-	}
 	//crawler.CrawlerTopReviewUser(crawler.US)
 	//crawler.CrawlerProduct(crawler.US)
-	//q := loadDoc()
+	q := loadDoc()
 	//fmt.Println(q.Find("a.a-link-normal").Attr("href"))
-	//q.Find("a.a-link-normal").Each(func(i int, selection *goquery.Selection) {
-	//	if s, exits := selection.Attr("data-hook"); exits {
-	//		fmt.Println(s)
-	//		fmt.Println(selection.Attr("href"))
-	//	}
-	//
-	//})
+	q.Find("a.a-link-normal.a-color-tertiary").Each(func(i int, selection *goquery.Selection) {
+		s := strings.TrimSpace(selection.Text())
+		if s != "Report abuse" {
+
+		}
+	})
 
 }
 
