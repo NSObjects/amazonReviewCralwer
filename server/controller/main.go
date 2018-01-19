@@ -33,7 +33,6 @@ func main() {
 			crawler.CrawlerTopReviewUser(util.JAPAN)
 			util.SetCountry(util.US)
 			crawler.CrawlerTopReviewUser(util.US)
-
 		}
 	}()
 	e := echo.New()

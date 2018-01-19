@@ -33,47 +33,43 @@ var (
 func CrawlerTopReviewUser(c util.Country) {
 
 	o := orm.NewOrm()
+	p := util.New(30)
+	var wg sync.WaitGroup
 	for index := 1; index < 1000; index++ {
-		err, q := getDocument(util.BaseUrl, index)
-		if err != nil {
-			util.Logger.Error(err.Error())
-			continue
-		}
-		p := util.New(30)
-		var wg sync.WaitGroup
-
-		for _, user := range getUsers(q) {
-			wg.Add(1)
-			go func(u models.User) {
-				p.Run(func() {
-					if email, err := getUserEmail(u.ProfileUrl); err == nil {
-						if email != "hidden@hidden.hidden" {
-							u.Email = email
-							if _, _, err := o.ReadOrCreate(&u, "profile_id"); err == nil {
-								u.Country = int(c)
-								configUser(&u)
-								if _, err := o.Update(&u); err != nil {
+		wg.Add(1)
+		go func(i int) {
+			p.Run(func() {
+				err, q := getDocument(util.BaseUrl, i)
+				if err == nil {
+					for _, user := range getUsers(q) {
+						if email, err := getUserEmail(user.ProfileUrl); err == nil {
+							if email != "hidden@hidden.hidden" {
+								user.Email = email
+								if _, _, err := o.ReadOrCreate(&user, "profile_id"); err == nil {
+									user.Country = int(c)
+									configUser(&user)
+									if _, err := o.Update(&user); err != nil {
+										util.Logger.Error(err.Error())
+									}
+								} else {
 									util.Logger.Error(err.Error())
 								}
-							} else {
+							}
+						} else {
+							if err != EmailNotFound {
 								util.Logger.Error(err.Error())
 							}
 						}
-					} else {
-						if err != EmailNotFound {
-							util.Logger.Error(err.Error())
-						}
 					}
-
-					wg.Done()
-
-				})
-
-			}(user)
-		}
-		wg.Wait()
-		p.Shutdown()
+				} else {
+					util.Logger.Error(err.Error())
+				}
+				wg.Done()
+			})
+		}(index)
 	}
+	wg.Wait()
+	p.Shutdown()
 }
 
 func getUsers(q *goquery.Document) []models.User {
@@ -179,7 +175,7 @@ func getDocument(url string, page int) (err error, g *goquery.Document) {
 	client := &http.Client{}
 	u := fmt.Sprintf("%s/hz/leaderboard/top-reviewers/ref=cm_cr_tr_link_%d?page=%d", url, page, page)
 	req, err := http.NewRequest("GET", u, nil)
-
+	fmt.Println(u)
 	// Headers
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 	req.Header.Add("Accept-Encoding", "gzip, deflate, br")
