@@ -41,7 +41,9 @@ func CrawlerTopReviewUser(c util.Country) {
 			p.Run(func() {
 				err, q := getDocument(util.BaseUrl, i)
 				if err == nil {
-					for _, user := range getUsers(q) {
+					users := getUsers(q)
+					for _, user := range users {
+
 						if email, err := getUserEmail(user.ProfileUrl); err == nil {
 							if email != "hidden@hidden.hidden" {
 								user.Email = email
