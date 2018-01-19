@@ -42,6 +42,7 @@ func CrawlerTopReviewUser(c util.Country) {
 				err, q := getDocument(util.BaseUrl, i)
 				if err == nil {
 					users := getUsers(q)
+					fmt.Println(len(users))
 					for _, user := range users {
 
 						if email, err := getUserEmail(user.ProfileUrl); err == nil {
@@ -177,7 +178,7 @@ func getDocument(url string, page int) (err error, g *goquery.Document) {
 	client := &http.Client{}
 	u := fmt.Sprintf("%s/hz/leaderboard/top-reviewers/ref=cm_cr_tr_link_%d?page=%d", url, page, page)
 	req, err := http.NewRequest("GET", u, nil)
-	fmt.Println(u)
+
 	// Headers
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 	req.Header.Add("Accept-Encoding", "gzip, deflate, br")
