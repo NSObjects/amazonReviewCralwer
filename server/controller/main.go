@@ -29,10 +29,11 @@ func main() {
 
 	go func() {
 		for {
-			util.SetCountry(util.JAPAN)
-			crawler.CrawlerTopReviewUser(util.JAPAN)
 			util.SetCountry(util.US)
 			crawler.CrawlerTopReviewUser(util.US)
+			util.SetCountry(util.JAPAN)
+			crawler.CrawlerTopReviewUser(util.JAPAN)
+
 		}
 	}()
 	e := echo.New()

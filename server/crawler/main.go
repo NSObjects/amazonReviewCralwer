@@ -9,12 +9,22 @@ import (
 	"net/http"
 )
 
+var products []models.Product
+
 func main() {
 	for {
-		if err, users := getuser(); err == nil {
+		err, users := getuser()
+		if err == nil {
 			for _, u := range users {
 				util.SetCountry(util.Country(u.Country))
-				crawler.GetReviewListUrl(u)
+				ps := crawler.GetReviewListUrl(u)
+				for _, p := range ps {
+					products = append(products, p)
+					if len(products) >= 20 {
+						crawler.SendProduct(products)
+						products = make([]models.Product, 0)
+					}
+				}
 			}
 		} else {
 			util.Logger.Error(err.Error())
@@ -26,7 +36,7 @@ func getuser() (error, []models.User) {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", "http://45.76.220.102:1323/", nil)
+	req, err := http.NewRequest("GET", "http://127.0.0.1:1323/", nil)
 	if err != nil {
 		return err, nil
 	}

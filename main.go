@@ -9,6 +9,8 @@ import (
 
 	"fmt"
 
+	"strings"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
@@ -30,14 +32,32 @@ func main() {
 	//crawler.CrawlerProduct(crawler.US)
 	q := loadDoc()
 	//fmt.Println(q.Find("a.a-link-normal").Attr("href"))
-	q.Find("a.a-link-normal").Each(func(i int, selection *goquery.Selection) {
-		if s, exits := selection.Attr("data-hook"); exits {
-			if s == "product-link" {
-				fmt.Println(selection.Attr("href"))
-			}
-
+	q.Find("a.a-text-center").Each(func(i int, selection *goquery.Selection) {
+		fmt.Println(selection.Find("a.a-profile.avatar.a-spacing-none").Attr("href"))
+		if v, exits := selection.Attr("name"); exits {
+			fmt.Println(v)
 		}
 	})
+
+	q.Find(".a-text-center").Find("a").Each(func(i int, selection *goquery.Selection) {
+		if profileUrl, exit := selection.Attr("href"); exit {
+			if strings.Contains(profileUrl, "account") {
+				fmt.Println(profileUrl)
+			}
+		}
+		if name, exit := selection.Attr("name"); exit {
+			fmt.Println(name)
+		}
+	})
+	//q.Find("a").Each()
+	//q.Find(".a-profile.avatar.a-spacing-none").Each(func(i int, selection *goquery.Selection) {
+	//	if s, exits := selection.Attr("data-hook"); exits {
+	//		if s == "product-link" {
+	//			fmt.Println(selection.Attr("href"))
+	//		}
+	//
+	//	}
+	//})
 
 }
 

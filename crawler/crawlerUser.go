@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 
 	"strings"
 
@@ -16,13 +17,28 @@ import (
 
 	"encoding/json"
 
-	"sync"
-
 	"strconv"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego/orm"
 )
+
+type UserInfo struct {
+	CustomerID     string `json:"customerId"`
+	NameHeaderData struct {
+		Name string `json:"name"`
+	} `json:"nameHeaderData"`
+	BioData struct {
+		PublicEmail string `json:"publicEmail"`
+		Social      struct {
+			HasLinks    bool `json:"hasLinks"`
+			SocialLinks []struct {
+				Type string      `json:"type"`
+				URL  interface{} `json:"url"`
+			} `json:"socialLinks"`
+		} `json:"social"`
+	} `json:"bioData"`
+}
 
 var (
 	EmailNotFound  = errors.New("email not found")
@@ -32,47 +48,92 @@ var (
 
 func CrawlerTopReviewUser(c util.Country) {
 
-	o := orm.NewOrm()
-	p := util.New(30)
-	var wg sync.WaitGroup
-	for index := 1; index < 1000; index++ {
-		wg.Add(1)
-		go func(i int) {
-			p.Run(func() {
-				err, q := getDocument(util.BaseUrl, i)
-				if err == nil {
-					users := getUsers(q)
-					fmt.Println(len(users))
-					for _, user := range users {
+	var users []models.User
+	//p := util.New(20)
+	//var wg sync.WaitGroup
+	for index := 1; index < 20; index++ {
+		err, q := getDocument(util.BaseUrl, index)
+		if err != nil {
+			util.Logger.Error(err.Error())
+			return
+		}
 
-						if email, err := getUserEmail(user.ProfileUrl); err == nil {
-							if email != "hidden@hidden.hidden" {
-								user.Email = email
-								if _, _, err := o.ReadOrCreate(&user, "profile_id"); err == nil {
-									user.Country = int(c)
-									configUser(&user)
-									if _, err := o.Update(&user); err != nil {
-										util.Logger.Error(err.Error())
-									}
-								} else {
-									util.Logger.Error(err.Error())
-								}
-							}
-						} else {
-							if err != EmailNotFound {
-								util.Logger.Error(err.Error())
-							}
-						}
-					}
-				} else {
-					util.Logger.Error(err.Error())
-				}
-				wg.Done()
-			})
-		}(index)
+		us := getUsers(q)
+
+		for _, u := range us {
+			users = append(users, u)
+		}
+
 	}
+	p := util.New(20)
+	var wg sync.WaitGroup
+	wg.Wait()
+
+	for _, u := range users {
+		wg.Add(1)
+		go func(user models.User) {
+			configUser(user, c)
+			wg.Done()
+		}(u)
+
+	}
+
 	wg.Wait()
 	p.Shutdown()
+
+}
+
+func configUser(user models.User, c util.Country) {
+	o := orm.NewOrm()
+	if userInfo, err := getUserInfo(user.ProfileUrl); err == nil {
+		if _, _, err := o.ReadOrCreate(&user, "profile_id"); err == nil {
+			if helpfulVotes, reviews, err := gethelpfulVotes(user.ProfileId); err == nil {
+				user.HelpfulVotes = helpfulVotes
+				user.Reviews = reviews
+			} else {
+				util.Logger.Error(err.Error())
+			}
+			user.Email = userInfo.BioData.PublicEmail
+			user.Name = userInfo.NameHeaderData.Name
+			if userInfo.BioData.Social.HasLinks == true {
+				for _, v := range userInfo.BioData.Social.SocialLinks {
+
+					switch v.Type {
+					case "facebook":
+						if s, ok := v.URL.(string); ok {
+							user.Facebook = s
+						}
+					case "twitter":
+						if s, ok := v.URL.(string); ok {
+							user.Twitter = s
+						}
+					case "pinterest":
+						if s, ok := v.URL.(string); ok {
+							user.Pinterest = s
+						}
+					case "instagram":
+						if s, ok := v.URL.(string); ok {
+							user.Instagram = s
+						}
+					case "youtube":
+						if s, ok := v.URL.(string); ok {
+							user.Youtube = s
+						}
+
+					}
+				}
+			}
+			user.Country = int(c)
+
+			if _, err := o.Update(&user); err != nil {
+				util.Logger.Error(err.Error())
+			}
+		} else {
+			util.Logger.Error(err.Error())
+		}
+	} else if err != EmailNotFound {
+		util.Logger.Error(err.Error())
+	}
 }
 
 func getUsers(q *goquery.Document) []models.User {
@@ -89,7 +150,20 @@ func getUsers(q *goquery.Document) []models.User {
 		if name, exit := selection.Attr("name"); exit {
 			user.ProfileId = name
 			if user.ProfileId != "" && user.ProfileUrl != "" {
-				users = append(users, user)
+				if email, err := getUserEmail(user.ProfileUrl); err == nil {
+					fmt.Println(email)
+					if email != "hidden@hidden.hidden" {
+						user.Email = email
+						users = append(users, user)
+					}
+
+				} else {
+					if err != EmailNotFound {
+						util.Logger.Error(err.Error())
+					}
+
+				}
+
 				user = models.User{}
 			}
 		}
@@ -98,79 +172,30 @@ func getUsers(q *goquery.Document) []models.User {
 	return users
 }
 
-func configUser(user *models.User) {
-	var userInfo struct {
-		CustomerID     string `json:"customerId"`
-		NameHeaderData struct {
-			Name string `json:"name"`
-		} `json:"nameHeaderData"`
-		BioData struct {
-			PublicEmail string `json:"publicEmail"`
-			Social      struct {
-				HasLinks    bool `json:"hasLinks"`
-				SocialLinks []struct {
-					Type string      `json:"type"`
-					URL  interface{} `json:"url"`
-				} `json:"socialLinks"`
-			} `json:"social"`
-		} `json:"bioData"`
-	}
+func getUserInfo(profileUrl string) (userInfo *UserInfo, err error) {
 
-	if err, s := getProfileHtml(user.ProfileUrl); err != nil {
-		util.Logger.Error(err.Error())
-	} else {
-		if helpfulVotes, reviews, err := gethelpfulVotes(user.ProfileId); err == nil {
-			user.HelpfulVotes = helpfulVotes
-			user.Reviews = reviews
-		} else {
-			util.Logger.Error(err.Error())
-		}
+	if err, s := getProfileHtml(profileUrl); err == nil {
 
 		d := strings.Index(s, "window.CustomerProfileRootProps = ")
 
 		if d <= 0 {
-			return
+			util.Logger.Error(profileUrl)
+			return nil, errors.New("CustomerProfileRootProps not found")
 		}
 
 		dd := s[d+len("window.CustomerProfileRootProps = ") : d+strings.Index(s[d:], "};")+1]
-		err := json.Unmarshal([]byte(dd), &userInfo)
+		err = json.Unmarshal([]byte(dd), &userInfo)
 		if err != nil {
-			util.Logger.Error(err.Error())
-			return
+			return nil, err
 		}
-
-		user.Name = userInfo.NameHeaderData.Name
-		user.Email = userInfo.BioData.PublicEmail
-		if userInfo.BioData.Social.HasLinks == true {
-			for _, v := range userInfo.BioData.Social.SocialLinks {
-
-				switch v.Type {
-				case "facebook":
-					if s, ok := v.URL.(string); ok {
-						user.Facebook = s
-					}
-				case "twitter":
-					if s, ok := v.URL.(string); ok {
-						user.Twitter = s
-					}
-				case "pinterest":
-					if s, ok := v.URL.(string); ok {
-						user.Pinterest = s
-					}
-				case "instagram":
-					if s, ok := v.URL.(string); ok {
-						user.Instagram = s
-					}
-				case "youtube":
-					if s, ok := v.URL.(string); ok {
-						user.Youtube = s
-					}
-
-				}
-			}
-		}
+	} else {
+		return nil, err
+	}
+	if userInfo.BioData.PublicEmail == "" || userInfo.BioData.PublicEmail == "hidden@hidden.hidden" {
+		return nil, EmailNotFound
 	}
 
+	return
 }
 
 func getDocument(url string, page int) (err error, g *goquery.Document) {
@@ -178,7 +203,7 @@ func getDocument(url string, page int) (err error, g *goquery.Document) {
 	client := &http.Client{}
 	u := fmt.Sprintf("%s/hz/leaderboard/top-reviewers/ref=cm_cr_tr_link_%d?page=%d", url, page, page)
 	req, err := http.NewRequest("GET", u, nil)
-
+	fmt.Println(u)
 	// Headers
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 	req.Header.Add("Accept-Encoding", "gzip, deflate, br")
@@ -251,7 +276,7 @@ func getUserEmail(profileUrl string) (email string, err error) {
 			Email string `json:"email"`
 		} `json:"data"`
 	}
-
+	//fmt.Println(string(respBody))
 	if resp.StatusCode == http.StatusOK {
 		err = json.Unmarshal(respBody, &emailJSON)
 		if err != nil {

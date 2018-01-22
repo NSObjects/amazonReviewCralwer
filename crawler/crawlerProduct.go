@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"strings"
 
@@ -12,14 +13,12 @@ import (
 
 	"encoding/json"
 
-	"sync"
-
 	"io/ioutil"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-func GetReviewListUrl(user models.User) {
+func GetReviewListUrl(user models.User) []models.Product {
 	var urls []string
 	switch util.Country(user.Country) {
 	case util.US:
@@ -42,7 +41,6 @@ func GetReviewListUrl(user models.User) {
 		} else {
 			if err != TokenNotFound {
 				util.Logger.Error(err.Error())
-				return
 			}
 		}
 	case util.JAPAN:
@@ -59,7 +57,7 @@ func GetReviewListUrl(user models.User) {
 		wg.Add(1)
 		go func(url string) {
 			p.Run(func() {
-				if productLink, err := getProductLint(url); err == nil {
+				if productLink, err := getProductLint(url, util.Country(user.Country)); err == nil {
 					link := util.BaseUrl + productLink
 					product := models.Product{
 						UserId: user.Id,
@@ -79,21 +77,19 @@ func GetReviewListUrl(user models.User) {
 							product.Name = name
 						}
 						products = append(products, product)
-						if len(products) > 1 {
-							sendProduct(products)
-							products = make([]models.Product, 0)
-						}
 					}
 
 				} else {
 					util.Logger.Error(err.Error())
 				}
 			})
+			wg.Done()
 		}(reviewUrl)
 
 	}
 	wg.Wait()
 	p.Shutdown()
+	return products
 
 }
 
@@ -162,7 +158,7 @@ func getJPReviewList(profileId string) []string {
 
 }
 
-func sendProduct(products []models.Product) {
+func SendProduct(products []models.Product) {
 	if len(products) <= 0 {
 		return
 	}
@@ -179,7 +175,7 @@ func sendProduct(products []models.Product) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "http://45.76.220.102:1323/", body)
+	req, err := http.NewRequest("POST", "http://127.0.0.1:1323/", body)
 	if err != nil {
 		util.Logger.Error(err.Error())
 	}
@@ -328,7 +324,7 @@ func getReviewList(token string) (nextToken string, reviewList []string, err err
 	return "", nil, LastReviewPage
 }
 
-func getProductLint(reviewUrl string) (productUrl string, err error) {
+func getProductLint(reviewUrl string, c util.Country) (productUrl string, err error) {
 	client := &http.Client{}
 
 	// Create request
@@ -345,7 +341,7 @@ func getProductLint(reviewUrl string) (productUrl string, err error) {
 	if err != nil {
 		return productUrl, err
 	}
-
+	defer resp.Body.Close()
 	q, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {
 		return productUrl, err
@@ -356,7 +352,11 @@ func getProductLint(reviewUrl string) (productUrl string, err error) {
 			if s == "product-link" {
 
 				if url, exits := selection.Attr("href"); exits {
-					url += "&language=en_US"
+					b, _ := ioutil.ReadAll(resp.Body)
+					fmt.Println(string(b))
+					if c == util.JAPAN {
+						url += "&language=en_US"
+					}
 					productUrl = url
 				}
 			}
