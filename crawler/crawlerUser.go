@@ -50,7 +50,7 @@ func CrawlerTopReviewUser(c util.Country) {
 
 	var users []models.User
 
-	for index := 1; index < 20; index++ {
+	for index := 1; index < 1000; index++ {
 		err, q := getDocument(util.BaseUrl, index)
 		if err != nil {
 			util.Logger.Error(err.Error())
