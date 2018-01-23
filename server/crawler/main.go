@@ -36,7 +36,7 @@ func getuser() (error, []models.User) {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", "http://45.76.220.102:1323/", nil)
+	req, err := http.NewRequest("GET", "http://127.0.0.1:1323/", nil)
 	if err != nil {
 		return err, nil
 	}

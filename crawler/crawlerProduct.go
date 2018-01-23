@@ -19,34 +19,40 @@ import (
 )
 
 func GetReviewListUrl(user models.User) []models.Product {
-	var urls []string
+
 	switch util.Country(user.Country) {
 	case util.US:
-		if token, reviewList, err := getReviewListToken(user.ProfileId); err == nil {
-			for _, u := range reviewList {
-				urls = append(urls, u)
-			}
-			for {
-				if token, reviewList, err = getReviewList(token); err == nil {
-					for _, u := range reviewList {
-						urls = append(urls, u)
-					}
-				} else {
-					if err != LastReviewPage {
-						util.Logger.Error(err.Error())
-					}
-					break
+		return us(user)
+	case util.JAPAN:
+		return jp(user)
+	}
+
+	return nil
+
+}
+
+func us(user models.User) []models.Product {
+	var urls []string
+	if token, reviewList, err := getReviewListToken(user.ProfileId); err == nil {
+		for _, u := range reviewList {
+			urls = append(urls, u)
+		}
+		for {
+			if token, reviewList, err = getReviewList(token); err == nil {
+				for _, u := range reviewList {
+					urls = append(urls, u)
 				}
-			}
-		} else {
-			if err != TokenNotFound {
-				util.Logger.Error(err.Error())
+			} else {
+				if err != LastReviewPage {
+					util.Logger.Error(err.Error())
+				}
+				break
 			}
 		}
-	case util.JAPAN:
-		url := user.ProfileUrl
-		i := strings.Index(url, "account.") + 8
-		urls = getJPReviewList(url[i:])
+	} else {
+		if err != TokenNotFound {
+			util.Logger.Error(err.Error())
+		}
 	}
 
 	var products []models.Product
@@ -89,16 +95,64 @@ func GetReviewListUrl(user models.User) []models.Product {
 	}
 	wg.Wait()
 	p.Shutdown()
-	return products
 
+	return products
 }
 
-func getJPReviewList(profileId string) []string {
+func jp(user models.User) (products []models.Product) {
+	work := util.New(30)
+	var wg sync.WaitGroup
+	url := user.ProfileUrl
+	i := strings.Index(url, "account.") + 8
+	reviews := getJPReviewList(url[i:])
+	for _, p := range reviews {
+		wg.Add(1)
+		go func(r Reviews) {
+			work.Run(func() {
+				link := util.BaseUrl + r.Urls.ProductURL
+				product := models.Product{
+					UserId: user.Id,
+					Url:    link,
+					Name:   r.ProductTitle,
+				}
+				if doc, err := getProductDoc(link); err == nil {
+					if categoryList, err := getProductCategory(doc); err == nil {
+						product.Categorys = categoryList
+					} else {
+						util.Logger.Error(err.Error())
+					}
+
+					products = append(products, product)
+				} else {
+					util.Logger.Error(err.Error())
+				}
+			})
+			wg.Done()
+		}(p)
+
+	}
+	wg.Wait()
+	work.Shutdown()
+
+	return
+}
+
+type Reviews struct {
+	ProductTitle string `json:"productTitle"`
+	Urls         struct {
+		ProductURL string `json:"productUrl"`
+	} `json:"urls"`
+}
+
+func getJPReviewList(profileId string) (reviewLists []Reviews) {
 
 	var index int
-	list := make([]string, 0)
-	for {
 
+	for {
+		var reviewList struct {
+			Reviews    []Reviews `json:"reviews"`
+			NextOffset int       `json:"nextOffset"`
+		}
 		client := &http.Client{}
 		url := fmt.Sprintf("https://www.amazon.co.jp/gp/profile/amzn1.account.%s/activity_feed?review_offset=%d", profileId, index*10)
 
@@ -126,13 +180,6 @@ func getJPReviewList(profileId string) []string {
 			break
 		}
 
-		var reviewList struct {
-			Reviews []struct {
-				FullReviewPath string `json:"fullReviewPath"`
-			} `json:"reviews"`
-			NextOffset int `json:"nextOffset"`
-		}
-
 		// Read Response Body
 		respBody, _ := ioutil.ReadAll(resp.Body)
 
@@ -145,16 +192,15 @@ func getJPReviewList(profileId string) []string {
 		if len(reviewList.Reviews) <= 0 {
 			break
 		}
-
 		for _, v := range reviewList.Reviews {
-			list = append(list, util.BaseUrl+v.FullReviewPath)
+			reviewLists = append(reviewLists, v)
 		}
 
 		index++
 
 	}
 
-	return list
+	return
 
 }
 
@@ -175,7 +221,7 @@ func SendProduct(products []models.Product) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "http://45.76.220.102:1323/", body)
+	req, err := http.NewRequest("POST", "http://127.0.0.1:1323/", body)
 	if err != nil {
 		util.Logger.Error(err.Error())
 	}
