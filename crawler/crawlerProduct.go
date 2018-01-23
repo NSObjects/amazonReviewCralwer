@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"sync"
 
 	"strings"
 
@@ -56,83 +55,65 @@ func us(user models.User) []models.Product {
 	}
 
 	var products []models.Product
-	p := util.New(30)
-	var wg sync.WaitGroup
 
 	for _, reviewUrl := range urls {
-		wg.Add(1)
-		go func(url string) {
-			p.Run(func() {
-				if productLink, err := getProductLint(url, util.Country(user.Country)); err == nil {
-					link := util.BaseUrl + productLink
-					product := models.Product{
-						UserId: user.Id,
-						Url:    link,
-					}
-					if doc, err := getProductDoc(link); err == nil {
-						if categoryList, err := getProductCategory(doc); err == nil {
-							product.Categorys = categoryList
-						} else {
-							util.Logger.Error(err.Error())
-						}
-						if name, exists := doc.Find("#imgTagWrapperId").Children().Attr("alt"); exists {
-							product.Name = name
-						} else if name = doc.Find("#ebooksProductTitle").Text(); name != "" {
-							product.Name = name
-						} else if name = doc.Find("#productTitle").Text(); name != "" {
-							product.Name = name
-						}
-						products = append(products, product)
-					}
 
+		if productLink, err := getProductLint(reviewUrl, util.Country(user.Country)); err == nil {
+			link := util.BaseUrl + productLink
+			product := models.Product{
+				UserId: user.Id,
+				Url:    link,
+			}
+			if doc, err := getProductDoc(link); err == nil {
+				if categoryList, err := getProductCategory(doc); err == nil {
+					product.Categorys = categoryList
 				} else {
 					util.Logger.Error(err.Error())
 				}
-			})
-			wg.Done()
-		}(reviewUrl)
+				if name, exists := doc.Find("#imgTagWrapperId").Children().Attr("alt"); exists {
+					product.Name = name
+				} else if name = doc.Find("#ebooksProductTitle").Text(); name != "" {
+					product.Name = name
+				} else if name = doc.Find("#productTitle").Text(); name != "" {
+					product.Name = name
+				}
+				products = append(products, product)
+			}
+
+		} else {
+			util.Logger.Error(err.Error())
+		}
 
 	}
-	wg.Wait()
-	p.Shutdown()
 
 	return products
 }
 
 func jp(user models.User) (products []models.Product) {
-	work := util.New(30)
-	var wg sync.WaitGroup
+
 	url := user.ProfileUrl
 	i := strings.Index(url, "account.") + 8
 	reviews := getJPReviewList(url[i:])
 	for _, p := range reviews {
-		wg.Add(1)
-		go func(r Reviews) {
-			work.Run(func() {
-				link := util.BaseUrl + r.Urls.ProductURL
-				product := models.Product{
-					UserId: user.Id,
-					Url:    link,
-					Name:   r.ProductTitle,
-				}
-				if doc, err := getProductDoc(link); err == nil {
-					if categoryList, err := getProductCategory(doc); err == nil {
-						product.Categorys = categoryList
-					} else {
-						util.Logger.Error(err.Error())
-					}
+		link := util.BaseUrl + p.Urls.ProductURL
+		product := models.Product{
+			UserId: user.Id,
+			Url:    link,
+			Name:   p.ProductTitle,
+		}
+		if doc, err := getProductDoc(link); err == nil {
+			if categoryList, err := getProductCategory(doc); err == nil {
+				product.Categorys = categoryList
+			} else {
+				util.Logger.Error(err.Error())
+			}
 
-					products = append(products, product)
-				} else {
-					util.Logger.Error(err.Error())
-				}
-			})
-			wg.Done()
-		}(p)
+			products = append(products, product)
+		} else {
+			util.Logger.Error(err.Error())
+		}
 
 	}
-	wg.Wait()
-	work.Shutdown()
 
 	return
 }
