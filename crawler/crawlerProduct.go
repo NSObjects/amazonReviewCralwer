@@ -185,6 +185,7 @@ func getJPReviewList(profileId string) (reviewLists []Reviews) {
 
 		err = json.Unmarshal(respBody, &reviewList)
 		if err != nil {
+			fmt.Println(url)
 			util.Logger.Error(err.Error())
 			break
 		}
