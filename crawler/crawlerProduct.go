@@ -185,8 +185,8 @@ func getJPReviewList(profileId string) (reviewLists []Reviews) {
 
 		err = json.Unmarshal(respBody, &reviewList)
 		if err != nil {
-			fmt.Println(url)
-			//util.Logger.Error(err.Error())
+			util.Logger.Error(url)
+			util.Logger.Error(err.Error())
 			break
 		}
 
@@ -399,8 +399,8 @@ func getProductLint(reviewUrl string, c util.Country) (productUrl string, err er
 			if s == "product-link" {
 
 				if url, exits := selection.Attr("href"); exits {
-					b, _ := ioutil.ReadAll(resp.Body)
-					fmt.Println(string(b))
+					//b, _ := ioutil.ReadAll(resp.Body)
+					//fmt.Println(string(b))
 					if c == util.JAPAN {
 						url += "&language=en_US"
 					}
