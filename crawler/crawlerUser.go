@@ -304,7 +304,6 @@ func getProfileHtml(profileUrl string) (err error, htmlstr string) {
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 	req.Header.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7")
 	req.Header.Add("Cookie", util.Cookie)
-	req.Header.Add("If-None-Match", "W/\"4faafffbc5625b34d37ce3693b471d9c-gzip\"")
 	req.Header.Add("Referer", profileUrl)
 
 	// Fetch Request
