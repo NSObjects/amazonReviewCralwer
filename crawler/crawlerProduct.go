@@ -61,8 +61,9 @@ func us(user models.User) []models.Product {
 		if productLink, err := getProductLint(reviewUrl, util.Country(user.Country)); err == nil {
 			link := util.BaseUrl + productLink
 			product := models.Product{
-				UserId: user.Id,
-				Url:    link,
+				UserId:    user.Id,
+				Url:       link,
+				ReviewUrl: reviewUrl,
 			}
 			if doc, err := getProductDoc(link); err == nil {
 				if categoryList, err := getProductCategory(doc); err == nil {

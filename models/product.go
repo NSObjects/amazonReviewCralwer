@@ -9,6 +9,7 @@ type Product struct {
 	Categorys  []string `orm:"-" json:"categorys"`
 	Name       string
 	UserId     int64
+	ReviewUrl  string
 }
 
 func init() {
