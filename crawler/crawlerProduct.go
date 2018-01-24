@@ -177,7 +177,7 @@ func getJPReviewList(profileId string) (reviewLists []Reviews) {
 		for _, v := range reviewList.Reviews {
 			reviewLists = append(reviewLists, v)
 		}
-
+		resp.Body.Close()
 		index++
 
 	}
@@ -249,7 +249,7 @@ func getProductDoc(url string) (q *goquery.Document, err error) {
 	if err != nil {
 		return nil, err
 	}
-
+	defer resp.Body.Close()
 	q, err = goquery.NewDocumentFromResponse(resp)
 	if err != nil {
 		return nil, err
@@ -287,7 +287,7 @@ func getReviewListToken(profileId string) (token string, reviewList []string, er
 	if err != nil {
 		return "", nil, err
 	}
-
+	defer resp.Body.Close()
 	q, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {
 		return "", nil, err
@@ -330,6 +330,8 @@ func getReviewList(token string) (nextToken string, reviewList []string, err err
 	if err != nil {
 		return "", nil, err
 	}
+
+	defer resp.Body.Close()
 
 	q, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {

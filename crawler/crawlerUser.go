@@ -223,6 +223,7 @@ func getDocument(url string, page int) (err error, g *goquery.Document) {
 	}
 
 	defer resp.Body.Close()
+
 	var reader io.ReadCloser
 	switch resp.Header.Get("Content-Encoding") {
 	case "gzip":
@@ -266,6 +267,8 @@ func getUserEmail(profileUrl string) (email string, err error) {
 	if err != nil {
 		return "", err
 	}
+
+	defer resp.Body.Close()
 
 	respBody, _ := ioutil.ReadAll(resp.Body)
 
@@ -311,6 +314,7 @@ func getProfileHtml(profileUrl string) (err error, htmlstr string) {
 	}
 
 	defer resp.Body.Close()
+
 	var reader io.ReadCloser
 	switch resp.Header.Get("Content-Encoding") {
 	case "gzip":
@@ -350,6 +354,8 @@ func gethelpfulVotes(userId string) (int, int, error) {
 	if err != nil {
 		return 0, 0, err
 	}
+
+	defer resp.Body.Close()
 
 	// Read Response Body
 	respBody, _ := ioutil.ReadAll(resp.Body)

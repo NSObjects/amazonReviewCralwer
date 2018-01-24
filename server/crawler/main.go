@@ -47,6 +47,7 @@ func getuser() (error, []models.User) {
 		return err, nil
 	}
 
+	defer resp.Body.Close()
 	respBody, _ := ioutil.ReadAll(resp.Body)
 	var users []models.User
 	err = json.Unmarshal(respBody, &users)
