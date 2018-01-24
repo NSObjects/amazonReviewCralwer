@@ -105,7 +105,7 @@ func saveProducts(products []models.Product) {
 				}
 			}
 			product.CategoryId = categoryId
-			if _, err := o.Update(&product, "category_id", "name"); err != nil {
+			if _, err := o.Update(&product, "category_id", "name", "review_url"); err != nil {
 				util.Logger.Error(err.Error())
 			}
 		} else {
