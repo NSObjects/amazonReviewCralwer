@@ -98,9 +98,10 @@ func jp(user models.User) (products []models.Product) {
 	for _, p := range reviews {
 		link := util.BaseUrl + p.Urls.ProductURL
 		product := models.Product{
-			UserId: user.Id,
-			Url:    link,
-			Name:   p.ProductTitle,
+			UserId:    user.Id,
+			Url:       link,
+			Name:      p.ProductTitle,
+			ReviewUrl: util.BaseUrl + p.FullReviewPath,
 		}
 		if doc, err := getProductDoc(link); err == nil {
 			if categoryList, err := getProductCategory(doc); err == nil {
@@ -120,8 +121,9 @@ func jp(user models.User) (products []models.Product) {
 }
 
 type Reviews struct {
-	ProductTitle string `json:"productTitle"`
-	Urls         struct {
+	FullReviewPath string `json:"full_review_path"`
+	ProductTitle   string `json:"productTitle"`
+	Urls           struct {
 		ProductURL string `json:"productUrl"`
 	} `json:"urls"`
 }
