@@ -64,7 +64,7 @@ func CrawlerTopReviewUser(c util.Country) {
 		}
 
 	}
-	p := util.New(20)
+	p := util.New(10)
 	var wg sync.WaitGroup
 	wg.Wait()
 
