@@ -55,7 +55,7 @@ func sendUsers(users []models.User) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "http://127.0.0.1:1323/user", body)
+	req, err := http.NewRequest("POST", "http://45.76.220.102:1323/user", body)
 	if err != nil {
 		util.Logger.Error(err.Error())
 	}
@@ -77,7 +77,7 @@ func getTopReviewUrl() (*UserJson, error) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("GET", "http://127.0.0.1:1323/url", nil)
+	req, err := http.NewRequest("GET", "http://45.76.220.102:1323/url", nil)
 	if err != nil {
 		return nil, err
 	}
