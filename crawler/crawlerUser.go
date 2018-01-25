@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sync"
 
 	"strings"
 
@@ -20,7 +19,6 @@ import (
 	"strconv"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/astaxie/beego/orm"
 )
 
 type UserInfo struct {
@@ -46,93 +44,64 @@ var (
 	LastReviewPage = errors.New("last review paeg")
 )
 
-func CrawlerTopReviewUser(c util.Country) {
-
-	var users []models.User
-
-	for index := 1; index < 1000; index++ {
-		err, q := getDocument(util.BaseUrl, index)
-		if err != nil {
-			util.Logger.Error(err.Error())
-			return
+func CrawlerTopReviewUser(url string, c util.Country) (users []models.User) {
+	util.SetCountry(c)
+	if err, q := getDocument(url); err == nil {
+		user := getUsers(q)
+		for _, u := range user {
+			users = append(users, configUser(u, c))
 		}
-
-		us := getUsers(q)
-
-		for _, u := range us {
-			users = append(users, u)
-		}
-
-	}
-	p := util.New(10)
-	var wg sync.WaitGroup
-	wg.Wait()
-
-	for _, u := range users {
-		wg.Add(1)
-		go func(user models.User) {
-			configUser(user, c)
-			wg.Done()
-		}(u)
-
+		return
 	}
 
-	wg.Wait()
-	p.Shutdown()
-
+	return nil
 }
 
-func configUser(user models.User, c util.Country) {
-	o := orm.NewOrm()
+func configUser(user models.User, c util.Country) models.User {
+
 	if userInfo, err := getUserInfo(user.ProfileUrl); err == nil {
-		if _, _, err := o.ReadOrCreate(&user, "profile_id"); err == nil {
-			if helpfulVotes, reviews, err := gethelpfulVotes(user.ProfileId); err == nil {
-				user.HelpfulVotes = helpfulVotes
-				user.Reviews = reviews
-			} else {
-				util.Logger.Error(err.Error())
-			}
-			user.Email = userInfo.BioData.PublicEmail
-			user.Name = userInfo.NameHeaderData.Name
-			if userInfo.BioData.Social.HasLinks == true {
-				for _, v := range userInfo.BioData.Social.SocialLinks {
-
-					switch v.Type {
-					case "facebook":
-						if s, ok := v.URL.(string); ok {
-							user.Facebook = s
-						}
-					case "twitter":
-						if s, ok := v.URL.(string); ok {
-							user.Twitter = s
-						}
-					case "pinterest":
-						if s, ok := v.URL.(string); ok {
-							user.Pinterest = s
-						}
-					case "instagram":
-						if s, ok := v.URL.(string); ok {
-							user.Instagram = s
-						}
-					case "youtube":
-						if s, ok := v.URL.(string); ok {
-							user.Youtube = s
-						}
-
-					}
-				}
-			}
-			user.Country = int(c)
-
-			if _, err := o.Update(&user); err != nil {
-				util.Logger.Error(err.Error())
-			}
+		if helpfulVotes, reviews, err := gethelpfulVotes(user.ProfileId); err == nil {
+			user.HelpfulVotes = helpfulVotes
+			user.Reviews = reviews
 		} else {
 			util.Logger.Error(err.Error())
 		}
+		user.Email = userInfo.BioData.PublicEmail
+		user.Name = userInfo.NameHeaderData.Name
+		if userInfo.BioData.Social.HasLinks == true {
+			for _, v := range userInfo.BioData.Social.SocialLinks {
+
+				switch v.Type {
+				case "facebook":
+					if s, ok := v.URL.(string); ok {
+						user.Facebook = s
+					}
+				case "twitter":
+					if s, ok := v.URL.(string); ok {
+						user.Twitter = s
+					}
+				case "pinterest":
+					if s, ok := v.URL.(string); ok {
+						user.Pinterest = s
+					}
+				case "instagram":
+					if s, ok := v.URL.(string); ok {
+						user.Instagram = s
+					}
+				case "youtube":
+					if s, ok := v.URL.(string); ok {
+						user.Youtube = s
+					}
+
+				}
+			}
+		}
+		user.Country = int(c)
 	} else if err != EmailNotFound {
 		util.Logger.Error(err.Error())
 	}
+
+	return user
 }
 
 func getUsers(q *goquery.Document) []models.User {
@@ -150,7 +119,7 @@ func getUsers(q *goquery.Document) []models.User {
 			user.ProfileId = name
 			if user.ProfileId != "" && user.ProfileUrl != "" {
 				if email, err := getUserEmail(user.ProfileUrl); err == nil {
-					fmt.Println(email)
+
 					if email != "hidden@hidden.hidden" {
 						user.Email = email
 						users = append(users, user)
@@ -197,18 +166,17 @@ func getUserInfo(profileUrl string) (userInfo *UserInfo, err error) {
 	return
 }
 
-func getDocument(url string, page int) (err error, g *goquery.Document) {
+func getDocument(url string) (err error, g *goquery.Document) {
 
 	client := &http.Client{}
-	u := fmt.Sprintf("%s/hz/leaderboard/top-reviewers/ref=cm_cr_tr_link_%d?page=%d", url, page, page)
-	req, err := http.NewRequest("GET", u, nil)
-	fmt.Println(u)
+	req, err := http.NewRequest("GET", url, nil)
+
 	// Headers
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36")
 	req.Header.Add("Accept-Encoding", "gzip, deflate, br")
 	req.Header.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7")
 	req.Header.Add("Cookie", util.Cookie)
-	req.Header.Add("Referer", u)
+	req.Header.Add("Referer", url)
 
 	parseFormErr := req.ParseForm()
 	if parseFormErr != nil {

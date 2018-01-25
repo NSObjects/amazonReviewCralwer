@@ -14,6 +14,8 @@ import (
 
 	"io/ioutil"
 
+	"sync"
+
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -55,37 +57,47 @@ func us(user models.User) []models.Product {
 	}
 
 	var products []models.Product
+	p := util.New(20)
+	var wg sync.WaitGroup
 
 	for _, reviewUrl := range urls {
+		wg.Add(1)
+		go func(url string) {
+			p.Run(func() {
+				if productLink, err := getProductLint(url, util.Country(user.Country)); err == nil {
+					link := util.BaseUrl + productLink
+					product := models.Product{
+						UserProfile: user.ProfileUrl,
+						Url:         link,
+						ReviewUrl:   url,
+					}
+					if doc, err := getProductDoc(link); err == nil {
+						if categoryList, err := getProductCategory(doc); err == nil {
+							product.Categorys = categoryList
+						} else {
+							util.Logger.Error(err.Error())
+						}
+						if name, exists := doc.Find("#imgTagWrapperId").Children().Attr("alt"); exists {
+							product.Name = name
+						} else if name = doc.Find("#ebooksProductTitle").Text(); name != "" {
+							product.Name = name
+						} else if name = doc.Find("#productTitle").Text(); name != "" {
+							product.Name = name
+						}
+						products = append(products, product)
+					}
 
-		if productLink, err := getProductLint(reviewUrl, util.Country(user.Country)); err == nil {
-			link := util.BaseUrl + productLink
-			product := models.Product{
-				UserId:    user.Id,
-				Url:       link,
-				ReviewUrl: reviewUrl,
-			}
-			if doc, err := getProductDoc(link); err == nil {
-				if categoryList, err := getProductCategory(doc); err == nil {
-					product.Categorys = categoryList
 				} else {
 					util.Logger.Error(err.Error())
 				}
-				if name, exists := doc.Find("#imgTagWrapperId").Children().Attr("alt"); exists {
-					product.Name = name
-				} else if name = doc.Find("#ebooksProductTitle").Text(); name != "" {
-					product.Name = name
-				} else if name = doc.Find("#productTitle").Text(); name != "" {
-					product.Name = name
-				}
-				products = append(products, product)
-			}
-
-		} else {
-			util.Logger.Error(err.Error())
-		}
+			})
+			wg.Done()
+		}(reviewUrl)
 
 	}
+
+	wg.Wait()
+	p.Shutdown()
 
 	return products
 }
@@ -95,27 +107,35 @@ func jp(user models.User) (products []models.Product) {
 	url := user.ProfileUrl
 	i := strings.Index(url, "account.") + 8
 	reviews := getJPReviewList(url[i:])
-	for _, p := range reviews {
-		link := util.BaseUrl + p.Urls.ProductURL
-		product := models.Product{
-			UserId:    user.Id,
-			Url:       link,
-			Name:      p.ProductTitle,
-			ReviewUrl: util.BaseUrl + p.FullReviewPath,
-		}
-		if doc, err := getProductDoc(link); err == nil {
-			if categoryList, err := getProductCategory(doc); err == nil {
-				product.Categorys = categoryList
+	p := util.New(20)
+	var wg sync.WaitGroup
+	for _, r := range reviews {
+		wg.Add(1)
+		go func(review Reviews) {
+			link := util.BaseUrl + review.Urls.ProductURL
+			product := models.Product{
+				UserId:    user.Id,
+				Url:       link,
+				Name:      review.ProductTitle,
+				ReviewUrl: util.BaseUrl + review.FullReviewPath,
+			}
+			if doc, err := getProductDoc(link); err == nil {
+				if categoryList, err := getProductCategory(doc); err == nil {
+					product.Categorys = categoryList
+				} else {
+					util.Logger.Error(err.Error())
+				}
+
+				products = append(products, product)
 			} else {
 				util.Logger.Error(err.Error())
 			}
-
-			products = append(products, product)
-		} else {
-			util.Logger.Error(err.Error())
-		}
+			wg.Done()
+		}(r)
 
 	}
+	wg.Wait()
+	p.Shutdown()
 
 	return
 }
@@ -206,7 +226,7 @@ func SendProduct(products []models.Product) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "http://45.76.220.102:1323/", body)
+	req, err := http.NewRequest("POST", "http://127.0.0.1:1323/", body)
 	if err != nil {
 		util.Logger.Error(err.Error())
 	}
@@ -402,4 +422,8 @@ func getProductLint(reviewUrl string, c util.Country) (productUrl string, err er
 	}
 
 	return "", fmt.Errorf("product url not found /n %s", reviewUrl)
+}
+
+func getTopReviewUrl() {
+
 }
