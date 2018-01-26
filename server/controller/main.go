@@ -28,7 +28,7 @@ var countryURL = map[util.Country]string{
 
 var (
 	lastId      chan int64
-	country     = util.US
+	country     = util.JAPAN
 	cruuentPage chan int
 )
 
