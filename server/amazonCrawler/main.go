@@ -14,13 +14,16 @@ var products []models.Product
 
 func main() {
 	go func() {
-		if ur, err := getTopReviewUrl(); err == nil {
-			if users := crawler.CrawlerTopReviewUser(ur.Url, util.Country(ur.Country)); users != nil {
-				sendUsers(users)
+		for {
+			if ur, err := getTopReviewUrl(); err == nil {
+				if users := crawler.CrawlerTopReviewUser(ur.Url, util.Country(ur.Country)); users != nil {
+					sendUsers(users)
+				}
+			} else {
+				util.Logger.Error(err.Error())
 			}
-		} else {
-			util.Logger.Error(err.Error())
 		}
+
 	}()
 	for {
 		if users, err := getUsers(); err == nil {
@@ -45,7 +48,7 @@ func getUsers() ([]models.User, error) {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", "http://45.76.220.102:1323/", nil)
+	req, err := http.NewRequest("GET", "http://127.0.0.1:1323/", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +92,7 @@ func sendUsers(users []models.User) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "http://45.76.220.102:1323/user", body)
+	req, err := http.NewRequest("POST", "http://127.0.0.1:1323/user", body)
 	if err != nil {
 		util.Logger.Error(err.Error())
 	}
@@ -111,7 +114,7 @@ func getTopReviewUrl() (*UserJson, error) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("GET", "http://45.76.220.102:1323/url", nil)
+	req, err := http.NewRequest("GET", "http://127.0.0.1:1323/url", nil)
 	if err != nil {
 		return nil, err
 	}

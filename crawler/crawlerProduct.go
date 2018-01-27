@@ -114,10 +114,11 @@ func jp(user models.User) (products []models.Product) {
 		go func(review Reviews) {
 			link := util.BaseUrl + review.Urls.ProductURL
 			product := models.Product{
-				UserId:    user.Id,
-				Url:       link,
-				Name:      review.ProductTitle,
-				ReviewUrl: util.BaseUrl + review.FullReviewPath,
+				UserId:      user.Id,
+				Url:         link,
+				Name:        review.ProductTitle,
+				UserProfile: user.ProfileUrl,
+				ReviewUrl:   util.BaseUrl + review.FullReviewPath,
 			}
 			if doc, err := getProductDoc(link); err == nil {
 				if categoryList, err := getProductCategory(doc); err == nil {
@@ -226,7 +227,7 @@ func SendProduct(products []models.Product) {
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", "http://45.76.220.102:1323/", body)
+	req, err := http.NewRequest("POST", "http://127.0.0.1:1323/", body)
 	if err != nil {
 		util.Logger.Error(err.Error())
 	}
@@ -422,8 +423,4 @@ func getProductLint(reviewUrl string, c util.Country) (productUrl string, err er
 	}
 
 	return "", fmt.Errorf("product url not found /n %s", reviewUrl)
-}
-
-func getTopReviewUrl() {
-
 }

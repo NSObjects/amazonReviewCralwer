@@ -47,11 +47,7 @@ var (
 func CrawlerTopReviewUser(url string, c util.Country) (users []models.User) {
 	util.SetCountry(c)
 	if err, q := getDocument(url); err == nil {
-		user := getUsers(q)
-		for _, u := range user {
-			users = append(users, configUser(u, c))
-		}
-		return
+		return getUsers(q)
 	}
 
 	return nil
@@ -118,18 +114,9 @@ func getUsers(q *goquery.Document) []models.User {
 		if name, exit := selection.Attr("name"); exit {
 			user.ProfileId = name
 			if user.ProfileId != "" && user.ProfileUrl != "" {
-				if email, err := getUserEmail(user.ProfileUrl); err == nil {
-
-					if email != "hidden@hidden.hidden" {
-						user.Email = email
-						users = append(users, user)
-					}
-
-				} else {
-					if err != EmailNotFound {
-						util.Logger.Error(err.Error())
-					}
-
+				user = configUser(user, util.Country(user.Country))
+				if user.Email != "" && user.Email != "hidden@hidden.hidden" {
+					users = append(users, user)
 				}
 
 				user = models.User{}
@@ -228,6 +215,7 @@ func getUserEmail(profileUrl string) (email string, err error) {
 	req.Header.Add("Cookie", util.Cookie)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
 	req.Header.Add("Referer", profileUrl)
+	req.Header.Add("accept-encoding", "gzip, deflate, br")
 
 	// Fetch Request
 	resp, err := client.Do(req)
@@ -238,7 +226,19 @@ func getUserEmail(profileUrl string) (email string, err error) {
 
 	defer resp.Body.Close()
 
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	var reader io.ReadCloser
+	switch resp.Header.Get("Content-Encoding") {
+	case "gzip":
+		reader, err = gzip.NewReader(resp.Body)
+		if err != nil {
+			util.Logger.Error(err.Error())
+		}
+	default:
+		reader = resp.Body
+	}
+	var b []byte
+	buf := bytes.NewBuffer(b)
+	buf.ReadFrom(reader)
 
 	var emailJSON struct {
 		Status string `json:"status"`
@@ -246,16 +246,15 @@ func getUserEmail(profileUrl string) (email string, err error) {
 			Email string `json:"email"`
 		} `json:"data"`
 	}
-	//fmt.Println(string(respBody))
-	if resp.StatusCode == http.StatusOK {
-		err = json.Unmarshal(respBody, &emailJSON)
-		if err != nil {
-			return "", err
-		} else {
+	fmt.Println(string(buf.Bytes()))
 
-			if emailJSON.Status == "ok" {
-				return emailJSON.Data.Email, nil
-			}
+	err = json.Unmarshal(buf.Bytes(), &emailJSON)
+	if err != nil {
+		return "", err
+	} else {
+
+		if emailJSON.Status == "ok" {
+			return emailJSON.Data.Email, nil
 		}
 	}
 
